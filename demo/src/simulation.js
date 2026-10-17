@@ -1,0 +1,322 @@
+import { createBuilding, FLOOR_HEIGHT, key, UNIT_COLORS, segmentClear, edgeClear, FORCE_ENTRY_SECONDS } from './building.js';
+export { createBuilding, FLOOR_HEIGHT, key };
+export const BLOCK_HEAT = .79;
+export const DANGER_THRESHOLD = .58;
+const clamp=v=>Math.max(0,Math.min(1,v));
+const GOALS=new Set(['safe','safe-east']);
+
+export function shortestPath(building,start,goal,options={}) {
+  const {nodes,adjacency}=building,goals=goal instanceof Set?goal:new Set([goal]);
+  if(!nodes.has(start)||!goals.size)return null;
+  const dist=new Map([[start,0]]),previous=new Map(),open=new Set([start]);
+  while(open.size){
+    const current=[...open].reduce((a,b)=>dist.get(a)<dist.get(b)?a:b);open.delete(current);
+    if(goals.has(current)){
+      const path=[current];while(previous.has(path[0]))path.unshift(previous.get(path[0]));
+      return {path,cost:dist.get(current)};
+    }
+    for(const {id,edge}of adjacency.get(current)){
+      const n=nodes.get(id),from=nodes.get(current);
+      if(!options.ignoreHazards&&(!edgeClear(building,current,id,{allowForcedEntry:!!options.allowForcedEntry})||n.heat>=BLOCK_HEAT||(from.heat>=BLOCK_HEAT&&current!==start)))continue;
+      const cost=dist.get(current)+edge.length*(options.ignoreHazards?1:1+n.heat*7+n.smoke*2.2)+(edge.locked&&options.allowForcedEntry?FORCE_ENTRY_SECONDS*3.4:0);
+      if(cost<(dist.get(id)??Infinity)){dist.set(id,cost);previous.set(id,current);open.add(id);}
+    }
+  }
+  return null;
+}
+
+export class RescueSimulation {
+  constructor(mode='fixed',teamSize=1){this.reset(mode,teamSize);}
+  reset(mode=this.mode,teamSize=this.teamSize??1){
+    if(!Number.isInteger(teamSize)||teamSize<1||teamSize>3)throw new RangeError('Choose 1–3 firefighters.');
+    this.mode=mode;this.teamSize=teamSize;this.building=createBuilding();this.time=0;this.running=false;
+    this.events=[];this.handoffs=[];this.replans=0;this.lastPlan=-Infinity;this.spreadAccumulator=0;this.finished=false;this.rescuePointCount=0;this.containmentStarted=false;
+    this.people=['10C','ROBOT','120B','120C','220A','220B','310D','WC3'].map((room,i)=>({id:i+1,node:`r${room}`,room,status:'waiting',needsRescue:true,unit:null,next:null,progress:0,path:[],releasedAt:null}));
+    this.building.fires=[
+      {id:'metal-fire',floor:0,x:-13,z:-5,radius:1.65},
+      {id:'maker-fire',floor:1,x:5,z:3.5,radius:1.3},
+      {id:'mdes-fire',floor:2,x:-5,z:-2,radius:1.5},
+      {id:'prototype-fire',floor:3,x:0,z:3.5,radius:1.3},
+    ];
+    for(const fire of this.building.fires)fire.initialRadius=fire.radius;
+    for(const [id,heat]of [['rMETAL',.90],['c1-4',.92],['r220',.86],['c3-3',.88]])this.building.nodes.get(id).heat=heat;
+    for(const [i,p]of this.people.entries())Object.assign(this.building.nodes.get(p.node),{heat:[.4,.5,.49,.57,.39,.46,.42,.37][i],smoke:[.72,.8,.78,.88,.7,.76,.74,.68][i]});
+    Object.assign(this.building.nodes.get('rROBOT'),{heat:.5,smoke:.8});
+    this.firefighters=Array.from({length:teamSize},(_,i)=>({id:i+1,color:UNIT_COLORS[i],node:'safe',next:null,progress:0,pickups:[],target:null,carrying:[],path:[],escapePath:[],handoff:null,phase:'ready',action:null,reversing:false,routeCost:0}));
+    this.log(`${teamSize} firefighter${teamSize===1?'':'s'} ready. Eight occupants in immediate danger.`, 'warning');
+    this.log('West stair 1–2 and a basement passage are blocked.', 'warning');
+    this.plan(true);
+  }
+  get firefighter(){return this.firefighters[0];}
+  get rescued(){return this.people.filter(p=>p.status==='rescued').length;}
+  get walking(){return this.people.filter(p=>p.status==='walking').length;}
+  get complete(){return this.rescued===this.people.length;}
+  get phase(){return this.complete?'complete':this.firefighters.every(f=>['holding','standby'].includes(f.phase))&&!this.walking?'holding':'active';}
+  get fireCount(){return this.building.fires.length;}
+  get blockedCount(){return [...this.building.edges.values()].filter(e=>!edgeClear(this.building,e.a,e.b)).length;}
+  log(message,type='info'){this.events.unshift({time:this.time,message,type});this.events=this.events.slice(0,60);}
+  dangerAt(n){
+    if(n.type==='safe'||n.type==='exit')return 0;
+    let nearby=0;
+    for(const m of this.building.nodes.values()){
+      const d=Math.hypot(n.x-m.x,n.z-m.z);
+      if(m.floor===n.floor)nearby=Math.max(nearby,m.heat*Math.max(0,1-d/17));
+      if(m.floor===n.floor-1&&d<6)nearby=Math.max(nearby,m.heat*.55);
+    }
+    return clamp(n.heat*.6+n.smoke*.2+nearby*.7);
+  }
+  urgency(person){
+    if(person.status==='rescued')return 0;
+    const mover=person.status==='escorted'?this.firefighters.find(ff=>ff.id===person.unit)??person:person;
+    const a=this.building.nodes.get(mover.node),b=this.building.nodes.get(mover.next)??a,t=mover.progress??0;
+    return this.dangerAt({...this.position(mover),floor:t<.5?a.floor:b.floor,type:t<.5?a.type:b.type,heat:a.heat+(b.heat-a.heat)*t,smoke:a.smoke+(b.smoke-a.smoke)*t});
+  }
+  safeForWalking(n){return n.heat<=.16&&n.smoke<=.22&&this.dangerAt(n)<=.28&&segmentClear(this.building,n,n,{civilian:true});}
+  civilianRoutes(){
+    const {nodes,adjacency}=this.building;
+    const allowed=new Set([...nodes.values()].filter(n=>this.safeForWalking(n)).map(n=>n.id));
+    const dist=new Map([...GOALS].map(id=>[id,0])),next=new Map(),open=new Set(GOALS);
+    while(open.size){
+      const current=[...open].reduce((a,b)=>dist.get(a)<dist.get(b)?a:b);open.delete(current);
+      for(const {id,edge}of adjacency.get(current)){
+        if(!allowed.has(id)||edge.type==='outside'||!edgeClear(this.building,current,id,{civilian:true}))continue;
+        const cost=dist.get(current)+edge.length;
+        if(cost<(dist.get(id)??Infinity)){dist.set(id,cost);next.set(id,current);open.add(id);}
+      }
+    }
+    const routes=new Map();
+    for(const [id,cost]of dist){
+      const path=[id];while(next.has(path.at(-1)))path.push(next.get(path.at(-1)));
+      routes.set(id,{path,cost});
+    }
+    return routes;
+  }
+  crewPath(a,b){return shortestPath(this.building,a,b,{allowForcedEntry:true});}
+  candidates(unit=null){
+    const units=unit?[unit]:this.firefighters;
+    const safe=this.safeRoutes??this.civilianRoutes(),goals=new Set([...safe.keys()].filter(id=>this.building.nodes.get(id).type!=='room'));
+    return this.people.filter(p=>['waiting','stranded'].includes(p.status)&&(this.urgency(p)>=DANGER_THRESHOLD||p.needsRescue)).map(person=>{
+      const approaches=units.map(ff=>({unit:ff.id,route:this.crewPath(ff.next??ff.node,person.node)})).filter(a=>a.route).sort((a,b)=>a.route.cost-b.route.cost);
+      const approach=approaches[0]?.route??null,escape=this.crewPath(person.node,goals),urgency=this.urgency(person);
+      const owner=this.firefighters.find(ff=>ff.pickups.includes(person.id));
+      const score=approach&&escape?urgency*140-(approach.cost+escape.cost)*.35:-Infinity;
+      return {person,approach,escape,urgency,score,unit:owner?.id??null};
+    }).sort((a,b)=>b.score-a.score||a.person.id-b.person.id);
+  }
+  plan(initial=false){
+    this.safeRoutes=this.civilianRoutes();
+    const handoffGoals=new Set([...this.safeRoutes.keys()].filter(id=>this.building.nodes.get(id).type!=='room'));
+    const waiting=this.people.filter(p=>['waiting','stranded'].includes(p.status)&&(this.urgency(p)>=DANGER_THRESHOLD||p.needsRescue));
+    const cache=new Map(),releaseCache=new Map();
+    const travel=(a,b)=>{const k=`${a}|${b}`;if(!cache.has(k))cache.set(k,this.crewPath(a,b));return cache.get(k);};
+    const release=a=>{if(!releaseCache.has(a))releaseCache.set(a,this.crewPath(a,handoffGoals));return releaseCache.get(a);};
+    const options=this.firefighters.map(ff=>{
+      const origin=ff.next??ff.node,direct=release(origin);
+      if(ff.action){
+        const path=[origin,...ff.path],valid=path.every((id,i)=>!i||edgeClear(this.building,path[i-1],id,{allowForcedEntry:true}));
+        if(valid)return [{pickups:ff.pickups.slice(),path,cost:ff.routeCost,mask:ff.pickups.reduce((mask,id)=>mask|1<<(id-1),0),handoff:ff.handoff,escapePath:ff.escapePath,score:1000}];
+        ff.action=null;this.log(`Unit ${ff.id}: entry conditions changed; rerouting.`,'warning');
+      }
+      const jobs=[];
+      const addJob=pickups=>{
+        let cursor=origin,cost=0,penalty=0,path=[origin],mask=0;
+        for(const id of pickups){
+          const p=this.people.find(p=>p.id===id),route=travel(cursor,p.node);if(!route)return;
+          if(pickups.length===2&&cursor!==origin&&route.cost>55)return;
+          path.push(...route.path.slice(1));cost+=route.cost;
+          penalty+=this.urgency(p)*(cost/3.4)*.7;mask|=1<<(p.id-1);cursor=p.node;
+        }
+        const exit=release(cursor);if(!exit)return;
+        cost+=exit.cost;
+        if(ff.carrying.length&&pickups.length){
+          const critical=ff.carrying.some(id=>this.urgency(this.people.find(p=>p.id===id))>.9);
+          if(!direct||cost-direct.cost>(critical?6:45))return;
+        }
+        path.push(...exit.path.slice(1));
+        const switching=ff.pickups.length&&!pickups.includes(ff.pickups[0])?16:0;
+        const value=pickups.reduce((sum,id)=>sum+90+this.urgency(this.people.find(p=>p.id===id))*110,0);
+        jobs.push({pickups,path,cost,mask,handoff:path.at(-1),escapePath:exit.path,score:value-cost*.75-penalty-switching});
+      };
+      if(ff.carrying.length)addJob([]);
+      else {
+        // A crew without a feasible rescue returns outside instead of waiting
+        // inside a compartment that the advancing front may eventually consume.
+        const withdrawal=this.crewPath(origin,GOALS);
+        jobs.push({pickups:[],path:withdrawal?.path??[origin],cost:0,mask:0,handoff:null,escapePath:[],score:0});
+      }
+      if(ff.carrying.length<2)for(const p of waiting){
+        addJob([p.id]);
+        if(!ff.carrying.length)for(const q of waiting)if(p.id!==q.id)addJob([p.id,q.id]);
+      }
+      if(!jobs.length)jobs.push({pickups:[],path:[origin],cost:0,mask:0,handoff:null,escapePath:[],score:-10000});
+      return jobs;
+    });
+    // Exact dynamic programming covers the most reachable waiting occupants, then
+    // chooses the highest danger/travel score among those disjoint combinations
+    // of the generated single/pair jobs across all active firefighters.
+    const memo=new Map();
+    const solve=(index,used)=>{
+      if(index===options.length)return {score:0,coverage:0,jobs:[]};
+      const k=`${index}|${used}`;if(memo.has(k))return memo.get(k);
+      let best={score:-Infinity,coverage:-1,jobs:[]};
+      for(const job of options[index]){
+        if(job.mask&used)continue;
+        const tail=solve(index+1,used|job.mask),score=job.score+tail.score,coverage=job.pickups.length+tail.coverage;
+        if(coverage>best.coverage||(coverage===best.coverage&&score>best.score))best={score,coverage,jobs:[job,...tail.jobs]};
+      }
+      memo.set(k,best);return best;
+    };
+    const assigned=solve(0,0).jobs;
+    this.firefighters.forEach((ff,i)=>{
+      const job=assigned[i];if(!job)return;
+      const previous=`${ff.pickups.join(',')}|${ff.path.join(',')}|${ff.handoff}`;
+      ff.pickups=job.pickups.slice();ff.target=ff.pickups[0]??null;ff.path=job.path.slice(1);ff.handoff=job.handoff;ff.escapePath=job.escapePath;ff.routeCost=job.cost;
+      ff.phase=ff.action?'forcing-door':ff.pickups.length?(ff.carrying.length?'collecting':'approaching'):ff.carrying.length?(ff.handoff?'evacuating':'holding'):job.path.length>1?'withdrawing':waiting.length?'holding':'standby';
+      if(!initial&&previous!==`${ff.pickups.join(',')}|${ff.path.join(',')}|${ff.handoff}`){
+        this.replans++;
+        this.log(`Unit ${ff.id}: ${ff.pickups.length?`rescue ${ff.pickups.map(id=>`person ${id}`).join(' + ')}`:ff.carrying.length&&ff.handoff?`escort ${ff.carrying.length} to ${this.building.nodes.get(ff.handoff).label}`:ff.phase==='withdrawing'?'withdraw along a clear route outside':ff.phase==='holding'?'hold; no viable assignment':'stand by'}.`,'route');
+      }
+    });
+    this.lastPlan=this.time;
+  }
+  spread(dt){
+    const {nodes,adjacency}=this.building,updates=[];
+    const before=new Set([...this.building.edges.values()].filter(e=>!edgeClear(this.building,e.a,e.b)).map(e=>key(e.a,e.b)));
+    // Continuous fuel-front growth. Three overlapping lobes create local, irregular
+    // footprints; the room is never painted as uniformly burning.
+    if(!this.containmentStarted&&this.time>=30){
+      this.containmentStarted=true;this.log('Sprinklers control the fire fronts. Ventilation begins clearing protected passages.','success');this.lastPlan=-Infinity;
+    }
+    for(const fire of this.building.fires)fire.radius=Math.min(fire.initialRadius+2.15,fire.radius+dt*(this.containmentStarted?.004:.065));
+    this.building.hazardVersion++;
+    for(const n of nodes.values()){
+      if(['safe','exit','rescue'].includes(n.type))continue;
+      let heatIn=0,smokeIn=0;
+      for(const {id,edge}of adjacency.get(n.id)){
+        const m=nodes.get(id);if(edge.blocked||edge.type==='outside')continue;
+        const ventilation=edge.type==='door'?.35:edge.type==='stairs'?(m.floor<n.floor?1.7:.3):.9;
+        heatIn=Math.max(heatIn,Math.max(0,m.heat-n.heat)*ventilation);
+        smokeIn=Math.max(smokeIn,Math.max(0,Math.max(m.smoke,m.heat)-n.smoke)*ventilation);
+      }
+      // Vertical exposure uses physical overlap, rather than apartment room numbers.
+      if(n.type==='room')for(const below of nodes.values())if(below.type==='room'&&below.floor===n.floor-1&&below.heat>.65&&Math.hypot(n.x-below.x,n.z-below.z)<5){
+        heatIn=Math.max(heatIn,(below.heat-n.heat)*.3);smokeIn=Math.max(smokeIn,(below.heat-n.smoke)*.8);
+      }
+      const source=['rMETAL','c1-4','r220','c3-3'].includes(n.id);
+      const growth=n.heat>(n.type==='room'?.42:.6)?.003+n.heat*.007:0;
+      const cooling=this.containmentStarted&&!source?n.heat*.032:0,venting=this.containmentStarted?n.smoke*.022:0;
+      const heatGrowth=this.containmentStarted?0:growth;
+      updates.push([n,clamp(n.heat+dt*(heatIn*.035+heatGrowth-cooling)),clamp(n.smoke+dt*(smokeIn*.09+n.heat*.012-venting))]);
+    }
+    let blocks=0;
+    for(const [n,heat,smoke]of updates){if(n.heat<BLOCK_HEAT&&heat>=BLOCK_HEAT){blocks++;this.log(`${n.label} is impassable. Team routes updated.`,'danger');}n.heat=heat;n.smoke=smoke;}
+    // A stranded person's temporary graph point follows heat on its parent edge.
+    for(const n of nodes.values())if(n.anchor){
+      const a=nodes.get(n.anchor.a),b=nodes.get(n.anchor.b),t=n.anchor.ratio;
+      n.heat=a.heat+(b.heat-a.heat)*t;n.smoke=a.smoke+(b.smoke-a.smoke)*t;
+    }
+    for(const edge of this.building.edges.values())if(edge.sourceEdge)edge.blocked=this.building.edges.get(edge.sourceEdge).blocked;
+    const newlyClosed=[...this.building.edges.values()].filter(e=>!before.has(key(e.a,e.b))&&!edgeClear(this.building,e.a,e.b));
+    if(newlyClosed.length){this.log(`${newlyClosed.length} passage${newlyClosed.length===1?'':'s'} closed by the advancing fire front. Rerouting.`,'danger');this.lastPlan=-Infinity;}
+    return blocks+newlyClosed.length;
+  }
+  strand(person){
+    // Insert a pickup point at the exact stopped position, splitting the travel
+    // effort of the parent edge so crews can reach the person without a jump.
+    const position=this.position(person),a=this.building.nodes.get(person.node),b=this.building.nodes.get(person.next),ratio=person.progress;
+    const sourceKey=key(a.id,b.id),source=this.building.edges.get(sourceKey);
+    const id=`rescue-${person.id}-${++this.rescuePointCount}`;
+    const node={id,...position,floor:Math.round((position.y-.48)/FLOOR_HEIGHT)+1,type:'rescue',label:`Person ${person.id} refuge point`,heat:a.heat+(b.heat-a.heat)*ratio,smoke:a.smoke+(b.smoke-a.smoke)*ratio,anchor:{a:a.id,b:b.id,ratio}};
+    this.building.nodes.set(id,node);this.building.adjacency.set(id,[]);
+    for(const [endpoint,fraction]of [[a.id,ratio],[b.id,1-ratio]]){
+      const edge={a:endpoint,b:id,type:source.type,blocked:source.blocked,length:Math.max(.001,source.length*fraction),sourceEdge:sourceKey,solidClear:source.solidClear};
+      this.building.edges.set(key(endpoint,id),edge);this.building.adjacency.get(endpoint).push({id,edge});this.building.adjacency.get(id).push({id:endpoint,edge});
+    }
+    Object.assign(person,{node:id,next:null,progress:0,path:[],status:'stranded',needsRescue:true});
+  }
+  move(mover,dt,speed,civilian=false){
+    if(!mover.next)return false;
+    const edge=this.building.edges.get(key(mover.node,mover.next));
+    const position=this.position(mover),next=this.building.nodes.get(mover.next),previous=this.building.nodes.get(mover.node);
+    const passable=n=>civilian?this.safeForWalking(n):n.heat<BLOCK_HEAT;
+    const clearTo=n=>segmentClear(this.building,position,n,{civilian});
+    if((!mover.reversing&&(edge.blocked||edge.locked))||!passable(next)||!clearTo(next)){
+      if(mover.reversing||!passable(previous)||!clearTo(previous)){
+        mover.phase='holding';mover.path=[];this.lastPlan=-Infinity;
+        if(civilian){this.strand(mover);this.log(`Person ${mover.id}: hold position; trapped by heat. Additional assistance required.`,'danger');}
+        return false;
+      }
+      const old=mover.node;mover.node=mover.next;mover.next=old;mover.progress=1-mover.progress;mover.reversing=true;mover.path=[];
+      this.log(`${civilian?'Person':'Unit'} ${mover.id}: passage changed. Return to the last safe point.`,'danger');
+      this.lastPlan=-Infinity;
+    }
+    const progress=Math.min(1,mover.progress+dt*speed/edge.length),a=this.building.nodes.get(mover.node),b=this.building.nodes.get(mover.next);
+    const proposed={x:a.x+(b.x-a.x)*progress,y:a.y+(b.y-a.y)*progress,z:a.z+(b.z-a.z)*progress};
+    if(!segmentClear(this.building,position,proposed,{civilian}))return false;
+    mover.progress=progress;
+    if(mover.progress>=1){mover.node=mover.next;mover.next=null;mover.progress=0;mover.reversing=false;return true;}
+    return false;
+  }
+  tick(dt){
+    if(!this.running)return;
+    dt=Math.min(dt,.5);this.time+=dt;
+    if(this.mode==='spread'){
+      this.spreadAccumulator+=dt;
+      if(this.spreadAccumulator>=.5){this.spread(this.spreadAccumulator);this.spreadAccumulator=0;}
+    }
+    if(this.time-this.lastPlan>=1){
+      // Fixed incidents need replanning only after a pickup, handoff, or blockage.
+      if(this.mode==='spread'||this.lastPlan===-Infinity)this.plan();
+    }
+    let changed=false;
+    for(const ff of this.firefighters){
+      if(ff.action){
+        const edge=this.building.edges.get(ff.action.edge);
+        if(!edge.locked){ff.action=null;this.lastPlan=-Infinity;continue;}
+        const here=this.building.nodes.get(ff.node);
+        if(!segmentClear(this.building,here,here)){ff.action=null;ff.path=[];this.lastPlan=-Infinity;continue;}
+        ff.action.remaining-=dt;
+        if(ff.action.remaining<=0){edge.locked=false;edge.forced=true;this.building.hazardVersion++;this.log(`Forced entry complete: unit ${ff.id} opened ${edge.room}.`,'success');ff.action=null;this.lastPlan=-Infinity;}
+        continue;
+      }
+      if(ff.next){this.move(ff,dt,ff.carrying.length===2?2.4:ff.carrying.length?2.8:3.4);continue;}
+      const target=this.people.find(p=>p.id===ff.pickups[0]);
+      if(target&&['waiting','stranded'].includes(target.status)&&ff.node===target.node&&ff.carrying.length<2){
+        target.status='escorted';target.unit=ff.id;ff.carrying.push(target.id);ff.pickups.shift();ff.target=ff.pickups[0]??null;
+        ff.phase=ff.action?'forcing-door':ff.pickups.length?'collecting':'evacuating';
+        this.log(`Unit ${ff.id} located person ${target.id} in ${this.building.nodes.get(target.node).label}. Escort ${ff.carrying.length}/2.`,'success');
+      }
+      if(ff.carrying.length&&!ff.pickups.length&&ff.node===ff.handoff){
+        const safe=this.civilianRoutes().get(ff.node);
+        if(safe){
+          const people=ff.carrying.slice();
+          for(const id of people){const p=this.people.find(p=>p.id===id);Object.assign(p,{status:'walking',unit:null,node:ff.node,next:null,progress:0,path:safe.path.slice(1),releasedAt:this.time});}
+          this.handoffs.push({time:this.time,unit:ff.id,node:ff.node,people});
+          this.log(`Unit ${ff.id} released ${people.length} ${people.length===1?'person':'people'} at ${this.building.nodes.get(ff.node).label}. Clear route outside; continuing independently.`,'success');
+          ff.carrying=[];ff.pickups=[];ff.target=null;ff.path=[];ff.handoff=null;changed=true;
+        }else{ff.path=[];this.lastPlan=-Infinity;}
+      }
+      if(!ff.next&&ff.path.length){
+        const id=ff.path[0],edge=this.building.edges.get(key(ff.node,id));
+        if(!edge||!edgeClear(this.building,ff.node,id,{allowForcedEntry:true})){this.lastPlan=-Infinity;continue;}
+        if(edge.locked){ff.action={type:'force-door',edge:key(ff.node,id),remaining:FORCE_ENTRY_SECONDS,total:FORCE_ENTRY_SECONDS,room:edge.room};ff.phase='forcing-door';this.log(`Unit ${ff.id}: force locked door to ${edge.room}; ${FORCE_ENTRY_SECONDS} seconds.`,'warning');continue;}
+        ff.next=ff.path.shift();ff.progress=0;
+      }
+    }
+    for(const person of this.people.filter(p=>p.status==='walking')){
+      if(person.next){this.move(person,dt,2.1,true);continue;}
+      if(GOALS.has(person.node)){person.assemblySlot=this.people.filter(p=>p.status==='rescued'&&p.node===person.node).length;person.status='rescued';this.log(`Person ${person.id} reached ${this.building.nodes.get(person.node).label}.`,'success');continue;}
+      const safe=this.civilianRoutes().get(person.node);
+      if(!safe){person.status='waiting';person.needsRescue=true;person.path=[];changed=true;this.log(`Person ${person.id}: evacuation route changed; assistance needed.`,'danger');continue;}
+      person.path=safe.path.slice(1);person.next=person.path.shift()??null;person.progress=0;
+    }
+    if(changed)this.plan();
+    if(this.complete){this.running=false;for(const ff of this.firefighters)ff.phase='complete';if(!this.finished)this.log('All eight endangered occupants are safely outside.','success');this.finished=true;}
+  }
+  position(mover=this.firefighter){
+    const a=this.building.nodes.get(mover.node),b=this.building.nodes.get(mover.next)??a;
+    if(mover.status==='rescued'&&GOALS.has(mover.node)){const slot=mover.assemblySlot??0;return {x:a.x+(slot%4-1.5)*1.15,y:a.y,z:a.z+(Math.floor(slot/4)-.5)*1.15};}
+    return {x:a.x+(b.x-a.x)*mover.progress,y:a.y+(b.y-a.y)*mover.progress,z:a.z+(b.z-a.z)*mover.progress};
+  }
+  routeNodes(ff=this.firefighter){return [ff.node,...(ff.next?[ff.next]:[]),...ff.path];}
+}
