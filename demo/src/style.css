@@ -119,3 +119,10 @@
 
 .ground-level-label{font-size:10px;font-weight:600;color:#607b84;background:#eaf2f1d9;border:1px solid #bfd0d0;padding:4px 7px}.site-street-label{font-size:8px;letter-spacing:.7px;color:#78919c;background:none;padding:2px 5px}
 @media(max-width:640px){.ground-level-label{font-size:8px;padding:3px 5px}.site-street-label{font-size:7px}}
+
+/* Compact incident controls and floor-only architectural annotations. */
+.guidance-content > .team-size-row { flex-shrink:0; margin:0 0 10px; padding:0 0 10px; border-bottom:1px solid var(--border, #dce3e8); }
+.guidance-content > .team-size-row label { font-size:11px; font-weight:650; }
+.guidance-content > .team-size-row select { width:135px; height:30px; font-size:11px; }
+.locked-room-label,.obstruction-label { background:#fff4df; color:#8a6024; border:1px solid #ddbd7a; border-radius:4px; padding:3px 5px; font-size:9px; font-weight:650; }
+@media (min-width:981px) and (max-height:740px) { .guidance-content > .team-size-row { margin-bottom:6px; padding-bottom:6px; } }

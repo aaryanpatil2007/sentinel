@@ -25,7 +25,7 @@ test('fixed mode evacuates everyone without changing heat or crossing blocked li
  assert.equal(s.rescued,8);assert.equal(s.phase,'complete');assert.deepEqual([...s.building.nodes.values()].map(n=>[n.heat,n.smoke]),initial);
 });
 test('spreading fire develops hazards and changes team assignments',()=>{
- const s=new RescueSimulation('spread');advance(s,100);assert.ok(s.fireCount>4);assert.ok(s.replans>3);assert.ok(s.events.some(e=>e.type==='danger'));
+ const s=new RescueSimulation('spread'),radius=s.building.fires[0].radius;advance(s,100);assert.ok(s.building.fires[0].radius>radius+1);assert.ok(s.replans>3);assert.ok(s.events.some(e=>e.type==='danger'));
 });
 test('pausing freezes all crews, occupants, fire, and incident time',()=>{
  const s=new RescueSimulation('spread');advance(s,10);s.running=false;

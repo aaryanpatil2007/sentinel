@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
-import { FLOOR_HEIGHT, LEVELS, ROOMS, UNIT_COLORS, levelLabel } from './building.js';
+import { FLOOR_HEIGHT, LEVELS, ROOMS, UNIT_COLORS, levelLabel, BATHROOMS, LOCKED_ROOMS, OBSTACLES, fireLobes, edgeClear, segmentClear } from './building.js';
 
 const VIEW_FLOOR_HEIGHT = 8;
 const viewY = y => (y - .48) / FLOOR_HEIGHT * VIEW_FLOOR_HEIGHT + .48;
@@ -27,7 +27,7 @@ export class BuildingView {
     const sun = new THREE.DirectionalLight(0xfff4e7, 3.5); sun.position.set(-30, 65, 35); sun.castShadow = true;
     sun.shadow.mapSize.set(2048, 2048); Object.assign(sun.shadow.camera, { left: -45, right: 45, top: 50, bottom: -40, far: 150 });
     sun.shadow.bias = -.0006; this.scene.add(sun);
-    this.materials = new Map(); this.floorGroups = []; this.shellGroups = []; this.pings = new Map(); this.fires = new Map(); this.heatTiles = new Map();
+    this.materials = new Map(); this.floorGroups = []; this.shellGroups = []; this.pings = new Map(); this.fires = new Map();
     this.world = new THREE.Group(); this.scene.add(this.world);
     this.crewModels = new Map(); this.walkers = new Map();
     this.makeGround(); this.makeBuilding(); this.makeMarkers();
@@ -99,18 +99,36 @@ export class BuildingView {
         this.box(shell,[3.7,VIEW_FLOOR_HEIGHT-1.2,.12],[x,y+VIEW_FLOOR_HEIGHT/2,-9.15],0x99b7c3,{metalness:.15,roughness:.3});
         this.box(shell,[.1,VIEW_FLOOR_HEIGHT-1.1,.15],[x,y+VIEW_FLOOR_HEIGHT/2,-9.03],0x6d818e);
       }
-      for(const room of ROOMS.filter(r=>r.floor===f)){
+      for(const room of [...ROOMS,...BATHROOMS].filter(r=>r.floor===f)){
         this.box(group,[room.w-.15,.08,room.d-.2],[room.x,y+.2,room.z],room.kind==='maker'||room.kind==='shop'?0xd0dce1:0xe5e7e0);
-        // Low partitions show room boundaries; furniture would obscure rescue markers.
-        if(room.d<=6){
-          this.box(group,[.1,.65,room.d],[room.x-room.w/2,y+.5,room.z],0xc2cdd2);
-          this.box(group,[room.w,.65,.1],[room.x,y+.5,room.z+room.d/2],0xc2cdd2);
+        // Low, translucent partitions expose useful detail without hiding occupants.
+        const front=room.z>5?room.z-room.d/2:Math.min(1.4,room.z+room.d/2),back=room.z>5?room.z+room.d/2:room.z-room.d/2;
+        const depth=Math.abs(back-front),middle=(back+front)/2,wall={transparent:true,opacity:.68};
+        for(const x of [room.x-room.w/2,room.x+room.w/2])this.box(group,[.12,.75,depth],[x,y+.58,middle],0xa7b9c2,wall);
+        this.box(group,[room.w,.75,.12],[room.x,y+.58,back],0xa7b9c2,wall);
+        const gap=1.6,wing=(room.w-gap)/2;
+        for(const direction of [-1,1])this.box(group,[wing,.75,.12],[room.x+direction*(gap/2+wing/2),y+.58,front],0xa7b9c2,wall);
+        const locked=LOCKED_ROOMS.has(room.id);
+        this.box(group,[1.4,.06,.5],[room.x,y+.32,front],locked?0xc58a3a:0x7da89b);
+        if(locked){
+          this.box(group,[1.4,.85,.12],[room.x,y+.7,front],0xc58a3a,{transparent:true,opacity:.8});
+          this.roomLabels.push(this.label(group,'Locked',[room.x,y+1.4,front],'locked-room-label'));
         }
-        const tile=new THREE.Mesh(new THREE.PlaneGeometry(room.w-.3,room.d-.3),new THREE.MeshBasicMaterial({color:0xed773f,transparent:true,opacity:0,depthWrite:false}));
-        tile.rotation.x=-Math.PI/2;tile.position.set(room.x,y+.27,room.z);group.add(tile);this.heatTiles.set(`r${room.id}`,tile);
-        const text=room.kind==='studio'||room.kind==='maker'||room.kind==='shop'?room.label:room.id;
+        if(room.kind==='bathroom'){
+          for(const direction of [-1,1])this.box(group,[.9,.55,1.1],[room.x+direction*.9,y+.55,room.z-.8],0xf6f7f5);
+          this.box(group,[.1,.7,1.8],[room.x,y+.6,room.z-.8],0xb7c8ce,wall);
+          this.box(group,[2.7,.65,.7],[room.x,y+.6,room.z+1.4],0xc1d4db);
+        }
+        const text=room.kind==='bathroom'?'WC · Restrooms':room.kind==='studio'||room.kind==='maker'||room.kind==='shop'?room.label:room.id;
         const label=this.label(group,text,[room.x,y+.65,room.z-1],room.d>6?'room-label':'small-room-label');
         this.roomLabels.push(label);
+      }
+      for(const prop of OBSTACLES.filter(p=>p.floor===f)){
+        this.box(group,[prop.w,prop.h,prop.d],[prop.x,y+.3+prop.h/2,prop.z],prop.id.startsWith('bench')?0x89969c:0x9a7c58);
+        if(!prop.id.startsWith('bench')){
+          this.box(group,[prop.w+.12,.08,.18],[prop.x,y+.35+prop.h,prop.z],0xdfb063);
+          this.roomLabels.push(this.label(group,prop.label,[prop.x,y+1.6,prop.z],'obstruction-label'));
+        }
       }
       for(const [x,name]of [[-16,'E'],[16,'W']]){
         this.box(group,[3,.18,3.5],[x,y+.23,4],0x9dadb3);
@@ -131,7 +149,7 @@ export class BuildingView {
     for(const x of [-12,-6,0,6,12])for(const z of [-6,-1,4])this.box(this.roof,[5.5,.12,4.5],[x,top+.6,z],0x3f6075,{metalness:.4,roughness:.25});
     this.label(this.roof,'Jacobs Hall',[0,top+1.1,7],'building-label');
     this.blockMarkers=[];
-    for(const edge of this.sim.building.edges.values())if(edge.blocked){
+    for(const edge of this.sim.building.edges.values())if(edge.blocked&&!edge.obstruction){
       const a=this.sim.building.nodes.get(edge.a),b=this.sim.building.nodes.get(edge.b);
       const label=this.label(this.world,edge.type==='stairs'?'✕ Stair':'✕ Passage',[(a.x+b.x)/2,viewY((a.y+b.y)/2)+.8,(a.z+b.z)/2+1],'blocked-label');
       this.blockMarkers.push({label,floors:[a.floor,b.floor]});
@@ -165,32 +183,35 @@ export class BuildingView {
       const escorts=[this.makePerson(0x259a75),this.makePerson(0x259a75)];escorts.forEach(e=>{e.visible=false;this.scene.add(e);});this.crewModels.set(ff.id,{group,tag,escorts});
     }
   }
-  makeFire(node) {
-    const g=new THREE.Group();g.position.set(node.x,viewY(node.y),node.z);
-    const tongues=[];
-    for(let i=0;i<3;i++) {
-      const flame=new THREE.Mesh(new THREE.ConeGeometry(.3+(i%3)*.12,1.4+(i%2)*.8,5),new THREE.MeshBasicMaterial({color:i%2?0xffbf47:0xf06932,transparent:true,opacity:.88,depthWrite:false}));
-      flame.position.set(Math.sin(i*2.4)*.7,.7,Math.cos(i*2.4)*.7);flame.rotation.z=Math.sin(i)*.15;g.add(flame);tongues.push(flame);
+  makeFire(front) {
+    const g=new THREE.Group();g.position.y=viewY((front.floor-1)*FLOOR_HEIGHT+.48);
+    const lobes=[],tongues=[],smoke=[];
+    for(let j=0;j<3;j++){
+      const footprint=new THREE.Mesh(new THREE.CircleGeometry(1,48),new THREE.MeshBasicMaterial({color:0xe96e2c,transparent:true,opacity:.52,depthWrite:false}));
+      footprint.rotation.x=-Math.PI/2;footprint.position.y=.02+j*.004;g.add(footprint);
+      const rim=new THREE.Mesh(new THREE.RingGeometry(1,1.06,48),new THREE.MeshBasicMaterial({color:0xf7af44,transparent:true,opacity:.68,side:THREE.DoubleSide,depthWrite:false}));
+      rim.rotation.x=-Math.PI/2;rim.position.y=.035+j*.004;g.add(rim);lobes.push({footprint,rim});
+      for(let i=0;i<4;i++){
+        const flame=new THREE.Mesh(new THREE.ConeGeometry(.21,1.35,6),new THREE.MeshBasicMaterial({color:i%2?0xffc353:0xf16a2e,transparent:true,opacity:.9,depthWrite:false}));
+        flame.userData={lobe:j,angle:i*2.4,offset:i?.5:0};g.add(flame);tongues.push(flame);
+      }
+      const puff=new THREE.Mesh(new THREE.IcosahedronGeometry(.55,1),new THREE.MeshBasicMaterial({color:0x687685,transparent:true,opacity:.12,depthWrite:false}));g.add(puff);smoke.push(puff);
     }
-    const smoke=[];
-    for(let i=0;i<2;i++) {
-      const puff=new THREE.Mesh(new THREE.IcosahedronGeometry(.65+i*.12,1),new THREE.MeshBasicMaterial({color:0x687685,transparent:true,opacity:.14,depthWrite:false}));
-      puff.position.set(.1,1.8+i*.4,0);g.add(puff);smoke.push(puff);
-    }
-    this.scene.add(g);const fire={group:g,tongues,smoke,floor:node.floor};this.fires.set(node.id,fire);return fire;
+    this.scene.add(g);const fire={group:g,lobes,tongues,smoke,floor:front.floor};this.fires.set(front.id,fire);return fire;
   }
   setActiveUnit(id){if(this.activeUnit!==id){this.activeUnit=id;this.lastPath='';}}
   drawRoute(){
     const ff=this.sim.firefighters.find(f=>f.id===this.activeUnit)??this.sim.firefighter;
     const route=this.sim.routeNodes(ff);
-    const signature=ff.id+'|'+route.join(',')+'|'+ff.escapePath.join(',')+'|'+ff.pickups.join(',');
+    const signature=ff.id+'|'+route.join(',')+'|'+ff.escapePath.join(',')+'|'+ff.pickups.join(',')+'|'+this.sim.building.hazardVersion;
     if(signature===this.lastPath)return;this.lastPath=signature;
     while(this.pathGroup.children.length){const c=this.pathGroup.children[0];this.pathGroup.remove(c);c.geometry?.dispose();c.material?.dispose();}
     const make=(ids,color)=>{
       for(let i=1;i<ids.length;i++){
         const a=this.sim.building.nodes.get(ids[i-1]),b=this.sim.building.nodes.get(ids[i]);
+        if(!edgeClear(this.sim.building,a.id,b.id))continue;
         const curve=new THREE.LineCurve3(new THREE.Vector3(a.x,viewY(a.y)+.3,a.z),new THREE.Vector3(b.x,viewY(b.y)+.3,b.z));
-        const mesh=new THREE.Mesh(new THREE.TubeGeometry(curve,1,.13,6,false),new THREE.MeshBasicMaterial({color,transparent:true,opacity:.95,depthTest:false}));
+        const mesh=new THREE.Mesh(new THREE.TubeGeometry(curve,1,.13,6,false),new THREE.MeshBasicMaterial({color,transparent:true,opacity:.95,depthTest:true}));
         mesh.renderOrder=10;mesh.userData.floors=[a.floor,b.floor];this.pathGroup.add(mesh);
       }
     };
@@ -229,17 +250,27 @@ export class BuildingView {
       const owner=this.sim.firefighters.find(f=>f.pickups.includes(p.id));ping.el.classList.toggle('target',owner?.id===this.activeUnit);ping.el.setAttribute('aria-label',`Person ${p.id} · ${n.label} · immediate danger${owner?` · assigned to unit ${owner.id}`:''}`);
       const walker=this.walkers.get(p.id),pos=this.sim.position(p);walker.group.position.set(pos.x,viewY(pos.y),pos.z);walker.group.visible=p.status==='walking'&&this.onFloor(pos.y);walker.tag.visible=this.floor!==null;
     }
-    for(const n of this.sim.building.nodes.values()){
-      const tile=this.heatTiles.get(n.id);if(tile)tile.material.opacity=Math.min(.66,n.heat*.72+n.smoke*.1);
-      if(n.heat>.58&&!['safe','exit'].includes(n.type)){
-        const fire=this.fires.get(n.id)??this.makeFire(n);fire.group.visible=this.floor===null||fire.floor===this.floor;
-        fire.tongues.forEach((t,i)=>{t.scale.y=.65+Math.sin(elapsed*7+i*2)*.2+n.heat*.35;t.position.y=t.scale.y*.8;});
-        fire.smoke.forEach((p,i)=>{p.position.y=1.6+((elapsed*.5+i*.5)%2.5);p.position.x=Math.sin(i+elapsed*.3)*.7;});
-      }else if(this.fires.has(n.id))this.fires.get(n.id).group.visible=false;
+    for(const front of this.sim.building.fires){
+      const fire=this.fires.get(front.id)??this.makeFire(front),lobes=fireLobes(front);
+      fire.group.visible=this.floor===null||front.floor===this.floor;
+      fire.lobes.forEach(({footprint,rim},i)=>{
+        const lobe=lobes[i];for(const mesh of [footprint,rim]){mesh.position.x=lobe.x;mesh.position.z=lobe.z;mesh.scale.setScalar(lobe.radius);}
+      });
+      fire.tongues.forEach((t,i)=>{
+        const lobe=lobes[t.userData.lobe],offset=t.userData.offset*lobe.radius;
+        t.position.set(lobe.x+Math.cos(t.userData.angle)*offset,.65,lobe.z+Math.sin(t.userData.angle)*offset);
+        t.scale.y=.8+Math.sin(elapsed*7+i*2)*.18;
+      });
+      fire.smoke.forEach((p,i)=>{p.position.set(lobes[i].x,1.6+((elapsed*.5+i*.5)%2),lobes[i].z);});
     }
     for(const ff of this.sim.firefighters){
       const model=this.crewModels.get(ff.id),p=this.sim.position(ff);model.group.position.set(p.x+(ff.node==='safe'?(ff.id-2)*2.4*(ff.next?1-ff.progress:1):0),viewY(p.y),p.z);model.group.visible=this.onFloor(p.y);model.tag.visible=ff.id===this.activeUnit;model.tag.element.textContent=`F${ff.id}`;model.tag.element.classList.toggle('active-unit',ff.id===this.activeUnit);
-      model.escorts.forEach((e,i)=>{e.visible=ff.carrying.length>i&&model.group.visible;e.position.set(p.x+.7*(i?1:-1),viewY(p.y),p.z+.6);});
+      model.escorts.forEach((e,i)=>{
+        e.visible=ff.carrying.length>i&&model.group.visible;
+        const candidate={x:p.x+(i?.22:-.22),y:p.y,z:p.z};
+        const location=segmentClear(this.sim.building,candidate,candidate,{clearance:.28})?candidate:p;
+        e.position.set(location.x,viewY(location.y),location.z);
+      });
     }
     for(const m of this.pathGroup.children)m.visible=this.floor===null||m.userData.floors.includes(this.floor);
     this.renderer.render(this.scene,this.camera);this.labelRenderer.render(this.scene,this.camera);

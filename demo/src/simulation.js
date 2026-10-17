@@ -1,4 +1,4 @@
-import { createBuilding, FLOOR_HEIGHT, key, UNIT_COLORS } from './building.js';
+import { createBuilding, FLOOR_HEIGHT, key, UNIT_COLORS, segmentClear, edgeClear } from './building.js';
 export { createBuilding, FLOOR_HEIGHT, key };
 export const BLOCK_HEAT = .79;
 export const DANGER_THRESHOLD = .58;
@@ -17,7 +17,7 @@ export function shortestPath(building,start,goal,options={}) {
     }
     for(const {id,edge}of adjacency.get(current)){
       const n=nodes.get(id),from=nodes.get(current);
-      if(!options.ignoreHazards&&(edge.blocked||n.heat>=BLOCK_HEAT||(from.heat>=BLOCK_HEAT&&current!==start)))continue;
+      if(!options.ignoreHazards&&(!edgeClear(building,current,id)||n.heat>=BLOCK_HEAT||(from.heat>=BLOCK_HEAT&&current!==start)))continue;
       const cost=dist.get(current)+edge.length*(options.ignoreHazards?1:1+n.heat*7+n.smoke*2.2);
       if(cost<(dist.get(id)??Infinity)){dist.set(id,cost);previous.set(id,current);open.add(id);}
     }
@@ -26,12 +26,18 @@ export function shortestPath(building,start,goal,options={}) {
 }
 
 export class RescueSimulation {
-  constructor(mode='fixed',teamSize=3){this.reset(mode,teamSize);}
-  reset(mode=this.mode,teamSize=this.teamSize??3){
+  constructor(mode='fixed',teamSize=1){this.reset(mode,teamSize);}
+  reset(mode=this.mode,teamSize=this.teamSize??1){
     if(!Number.isInteger(teamSize)||teamSize<1||teamSize>3)throw new RangeError('Choose 1–3 firefighters.');
     this.mode=mode;this.teamSize=teamSize;this.building=createBuilding();this.time=0;this.running=false;
     this.events=[];this.handoffs=[];this.replans=0;this.lastPlan=-Infinity;this.spreadAccumulator=0;this.finished=false;this.rescuePointCount=0;
-    this.people=['10C','ROBOT','120B','120C','220A','220B','310D','310C'].map((room,i)=>({id:i+1,node:`r${room}`,room,status:'waiting',unit:null,next:null,progress:0,path:[],releasedAt:null}));
+    this.people=['10C','ROBOT','120B','120C','220A','220B','310D','WC3'].map((room,i)=>({id:i+1,node:`r${room}`,room,status:'waiting',unit:null,next:null,progress:0,path:[],releasedAt:null}));
+    this.building.fires=[
+      {id:'metal-fire',floor:0,x:-13,z:-5,radius:1.65},
+      {id:'maker-fire',floor:1,x:-5,z:-1.5,radius:1.7},
+      {id:'mdes-fire',floor:2,x:-5,z:-2,radius:1.5},
+      {id:'prototype-fire',floor:3,x:-13,z:-5,radius:1.6},
+    ];
     for(const [id,heat]of [['rMETAL',.90],['r120',.92],['r220',.86],['rAPT',.88]])this.building.nodes.get(id).heat=heat;
     for(const p of this.people)Object.assign(this.building.nodes.get(p.node),{heat:.45,smoke:.75});
     Object.assign(this.building.nodes.get('rROBOT'),{heat:.5,smoke:.8});
@@ -45,8 +51,8 @@ export class RescueSimulation {
   get walking(){return this.people.filter(p=>p.status==='walking').length;}
   get complete(){return this.rescued===this.people.length;}
   get phase(){return this.complete?'complete':this.firefighters.every(f=>['holding','standby'].includes(f.phase))&&!this.walking?'holding':'active';}
-  get fireCount(){return [...this.building.nodes.values()].filter(n=>n.heat>.65).length;}
-  get blockedCount(){return [...this.building.edges.values()].filter(e=>e.blocked||this.building.nodes.get(e.a).heat>=BLOCK_HEAT||this.building.nodes.get(e.b).heat>=BLOCK_HEAT).length;}
+  get fireCount(){return this.building.fires.length;}
+  get blockedCount(){return [...this.building.edges.values()].filter(e=>!edgeClear(this.building,e.a,e.b)).length;}
   log(message,type='info'){this.events.unshift({time:this.time,message,type});this.events=this.events.slice(0,60);}
   dangerAt(n){
     if(n.type==='safe'||n.type==='exit')return 0;
@@ -59,7 +65,7 @@ export class RescueSimulation {
     return clamp(n.heat*.6+n.smoke*.2+nearby*.7);
   }
   urgency(person){return this.dangerAt(this.building.nodes.get(person.node));}
-  safeForWalking(n){return n.heat<=.16&&n.smoke<=.22&&this.dangerAt(n)<=.28;}
+  safeForWalking(n){return n.heat<=.16&&n.smoke<=.22&&this.dangerAt(n)<=.28&&segmentClear(this.building,n,n,{civilian:true});}
   civilianRoutes(){
     const {nodes,adjacency}=this.building;
     const allowed=new Set([...nodes.values()].filter(n=>this.safeForWalking(n)).map(n=>n.id));
@@ -67,7 +73,7 @@ export class RescueSimulation {
     while(open.size){
       const current=[...open].reduce((a,b)=>dist.get(a)<dist.get(b)?a:b);open.delete(current);
       for(const {id,edge}of adjacency.get(current)){
-        if(edge.blocked||!allowed.has(id)||edge.type==='outside')continue;
+        if(!allowed.has(id)||edge.type==='outside'||!edgeClear(this.building,current,id,{civilian:true}))continue;
         const cost=dist.get(current)+edge.length;
         if(cost<(dist.get(id)??Infinity)){dist.set(id,cost);next.set(id,current);open.add(id);}
       }
@@ -120,7 +126,12 @@ export class RescueSimulation {
         jobs.push({pickups,path,cost,mask,handoff:path.at(-1),escapePath:exit.path,score:value-cost*.75-penalty-switching});
       };
       if(ff.carrying.length)addJob([]);
-      else jobs.push({pickups:[],path:[origin],cost:0,mask:0,handoff:null,escapePath:[],score:0});
+      else {
+        // A crew without a feasible rescue returns outside instead of waiting
+        // inside a compartment that the advancing front may eventually consume.
+        const withdrawal=shortestPath(this.building,origin,GOALS);
+        jobs.push({pickups:[],path:withdrawal?.path??[origin],cost:0,mask:0,handoff:null,escapePath:[],score:0});
+      }
       if(ff.carrying.length<2)for(const p of waiting){
         addJob([p.id]);
         if(!ff.carrying.length)for(const q of waiting)if(p.id!==q.id)addJob([p.id,q.id]);
@@ -147,16 +158,21 @@ export class RescueSimulation {
       const job=assigned[i];if(!job)return;
       const previous=`${ff.pickups.join(',')}|${ff.path.join(',')}|${ff.handoff}`;
       ff.pickups=job.pickups.slice();ff.target=ff.pickups[0]??null;ff.path=job.path.slice(1);ff.handoff=job.handoff;ff.escapePath=job.escapePath;ff.routeCost=job.cost;
-      ff.phase=ff.pickups.length?(ff.carrying.length?'collecting':'approaching'):ff.carrying.length?(ff.handoff?'evacuating':'holding'):waiting.length?'holding':'standby';
+      ff.phase=ff.pickups.length?(ff.carrying.length?'collecting':'approaching'):ff.carrying.length?(ff.handoff?'evacuating':'holding'):job.path.length>1?'withdrawing':waiting.length?'holding':'standby';
       if(!initial&&previous!==`${ff.pickups.join(',')}|${ff.path.join(',')}|${ff.handoff}`){
         this.replans++;
-        this.log(`Unit ${ff.id}: ${ff.pickups.length?`rescue ${ff.pickups.map(id=>`person ${id}`).join(' + ')}`:ff.carrying.length&&ff.handoff?`escort ${ff.carrying.length} to ${this.building.nodes.get(ff.handoff).label}`:ff.phase==='holding'?'hold; no viable assignment':'stand by'}.`,'route');
+        this.log(`Unit ${ff.id}: ${ff.pickups.length?`rescue ${ff.pickups.map(id=>`person ${id}`).join(' + ')}`:ff.carrying.length&&ff.handoff?`escort ${ff.carrying.length} to ${this.building.nodes.get(ff.handoff).label}`:ff.phase==='withdrawing'?'withdraw along a clear route outside':ff.phase==='holding'?'hold; no viable assignment':'stand by'}.`,'route');
       }
     });
     this.lastPlan=this.time;
   }
   spread(dt){
     const {nodes,adjacency}=this.building,updates=[];
+    const before=new Set([...this.building.edges.values()].filter(e=>!edgeClear(this.building,e.a,e.b)).map(e=>key(e.a,e.b)));
+    // Continuous fuel-front growth. Three overlapping lobes create local, irregular
+    // footprints; the room is never painted as uniformly burning.
+    for(const fire of this.building.fires)fire.radius+=dt*.018;
+    this.building.hazardVersion++;
     for(const n of nodes.values()){
       if(['safe','exit','rescue'].includes(n.type))continue;
       let heatIn=0,smokeIn=0;
@@ -181,7 +197,9 @@ export class RescueSimulation {
       n.heat=a.heat+(b.heat-a.heat)*t;n.smoke=a.smoke+(b.smoke-a.smoke)*t;
     }
     for(const edge of this.building.edges.values())if(edge.sourceEdge)edge.blocked=this.building.edges.get(edge.sourceEdge).blocked;
-    return blocks;
+    const newlyClosed=[...this.building.edges.values()].filter(e=>!before.has(key(e.a,e.b))&&!edgeClear(this.building,e.a,e.b));
+    if(newlyClosed.length){this.log(`${newlyClosed.length} passage${newlyClosed.length===1?'':'s'} closed by the advancing fire front. Rerouting.`,'danger');this.lastPlan=-Infinity;}
+    return blocks+newlyClosed.length;
   }
   strand(person){
     // Insert a pickup point at the exact stopped position, splitting the travel
@@ -199,20 +217,24 @@ export class RescueSimulation {
   }
   move(mover,dt,speed,civilian=false){
     if(!mover.next)return false;
-    const edge=this.building.edges.get(key(mover.node,mover.next)),next=this.building.nodes.get(mover.next);
+    const edge=this.building.edges.get(key(mover.node,mover.next));
+    const position=this.position(mover),next=this.building.nodes.get(mover.next),previous=this.building.nodes.get(mover.node);
     const passable=n=>civilian?this.safeForWalking(n):n.heat<BLOCK_HEAT;
-    if(!mover.reversing&&(edge.blocked||!passable(next))){
-      const previous=this.building.nodes.get(mover.node);
-      if(!passable(previous)){
-        mover.phase='holding';
-        if(civilian){this.strand(mover);this.log(`Person ${mover.id}: hold position; trapped by heat. Additional assistance required.`,'danger');this.lastPlan=-Infinity;}
+    const clearTo=n=>segmentClear(this.building,position,n,{civilian});
+    if((!mover.reversing&&(edge.blocked||edge.locked))||!passable(next)||!clearTo(next)){
+      if(mover.reversing||!passable(previous)||!clearTo(previous)){
+        mover.phase='holding';mover.path=[];this.lastPlan=-Infinity;
+        if(civilian){this.strand(mover);this.log(`Person ${mover.id}: hold position; trapped by heat. Additional assistance required.`,'danger');}
         return false;
       }
       const old=mover.node;mover.node=mover.next;mover.next=old;mover.progress=1-mover.progress;mover.reversing=true;mover.path=[];
       this.log(`${civilian?'Person':'Unit'} ${mover.id}: passage changed. Return to the last safe point.`,'danger');
       this.lastPlan=-Infinity;
     }
-    mover.progress+=dt*speed/edge.length;
+    const progress=Math.min(1,mover.progress+dt*speed/edge.length),a=this.building.nodes.get(mover.node),b=this.building.nodes.get(mover.next);
+    const proposed={x:a.x+(b.x-a.x)*progress,y:a.y+(b.y-a.y)*progress,z:a.z+(b.z-a.z)*progress};
+    if(!segmentClear(this.building,position,proposed,{civilian}))return false;
+    mover.progress=progress;
     if(mover.progress>=1){mover.node=mover.next;mover.next=null;mover.progress=0;mover.reversing=false;return true;}
     return false;
   }
@@ -248,7 +270,7 @@ export class RescueSimulation {
       }
       if(!ff.next&&ff.path.length){
         const id=ff.path[0],edge=this.building.edges.get(key(ff.node,id));
-        if(!edge||edge.blocked||this.building.nodes.get(id).heat>=BLOCK_HEAT){this.lastPlan=-Infinity;continue;}
+        if(!edge||!edgeClear(this.building,ff.node,id)){this.lastPlan=-Infinity;continue;}
         ff.next=ff.path.shift();ff.progress=0;
       }
     }
