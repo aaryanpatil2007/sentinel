@@ -288,3 +288,91 @@ Incident: Maple Court Apartments, 1420 Alder St; started 14 minutes before load;
 - `tsc --noEmit` and `vite build` must pass.
 - Manual browser walkthrough via `/browse`.
 - No E2E suite (deliberate trade-off for a hackathon demo; deviates from the global 80% coverage rule).
+
+---
+
+# Revision 2 — Jacobs Hall + Sentinel Engine (2026-10-17)
+
+**Supersedes sections 6–12 and the mock-data/stub parts of sections 1, 7, 8.** Sections 2–5 (stack, design system, layout, folder conventions), 10's comms UX and 13–14 still apply unless changed here. The AI chatbot remains out of scope.
+
+## R1. Purpose change
+
+Sentinel now renders UC Berkeley's **Jacobs Hall** (floors B, F1, F2, F3) and is the frontend for the teammate's **`sentinel_engine`** (FastAPI, `sentinel_engine/INTEGRATION.md`). The engine is the single source of truth for building graph, positions, hazards, routes, spread risk, triage and advisories. The app no longer runs its own routing, priority or movement logic.
+
+## R2. Architecture
+
+- `src/engine/`: typed client (`createEngineClient(baseUrl)`), engine payload types, event filter, offline fixture loader. Base URL `VITE_ENGINE_URL`, default `http://localhost:8787`. Requests time out after 4 s.
+- **Sync loop:** load `GET /building/graph` once. Poll `GET /incident/events?since=<seq>` every 1.5 s. When a returned event type is in the refresh set (`entity_registered`, `entity_location_updated`, `civilian_report`, `observation_ingested`, `hazard_added`, `hazard_removed`, `route_computed`, `route_updated`), refresh: `GET /incident/state`, `GET /spread/prediction`, `POST /rescue/prioritize`, `GET /civilians/{id}/evacuation` for each civilian, and `GET /civilians/{id}/advisory` for the resident being viewed. `advisory_drafted` and `rescue_prioritized` never trigger a refresh, because the app's own reads emit them. A full refresh also runs every 15 s.
+- **Seeding:** if the engine has no civilians, the app seeds the scenario in `src/data/scenario.json`:
+  1. `POST /incident/reset`
+  2. one `POST /civilians/report` per scenario resident
+  3. `POST /responders` for `UNIT_ALPHA` and `UNIT_BRAVO` at `EXT_STAGING`
+  4. scenario hazards (`POST /spread/ignite`, `POST /hazards`)
+  5. `POST /routes/compute` assigning each responder to the next-highest recommendation, with `route_id` `RESCUE_<responder_id>`
+
+  "Reset demo" runs the same sequence.
+- **Offline:** if the engine is unreachable, the app loads `src/data/engine-snapshot.json` (captured from the real engine by `scripts/capture_engine_snapshot.py`), shows an "Engine offline · showing recorded incident" banner, disables engine actions, and retries every 5 s.
+- **Local state:** message threads (keyed `thread-<civilian_id>` plus `crew`) and UI state persist to localStorage. Engine data is never persisted.
+
+## R3. Engine additions (the only teammate-code changes)
+
+- `POST /incident/reset`: a fresh `IncidentState`, cleared fire nodes. Returns `{"reset": true}`.
+- `GET /civilians/{id}/evacuation`: the `nearest_exit_route` route (`route_id` `EVAC_<id>`). Returns 404 for an unknown civilian and `{"status": "no_location"}` when no node is known. It never stores a route or appends an event.
+- `POST /civilians/location` `{civilian_id, graph_node_id}`: mirrors `/responders/location`. Returns 404 for an unknown civilian and 400 for an unknown node.
+
+Each addition has pytest coverage in `sentinel_engine/tests/test_api.py`.
+
+## R4. Derived UI state (pure functions, `src/engine/derive.ts`)
+
+- **Civilian status:**
+  - node of type `staging` or `entrance` → **evacuated**
+  - no node → **unknown**
+  - report says mobility limited or unconscious → **immobile**
+  - report says exits blocked → **trapped**
+  - otherwise → **sheltering**
+- **Tone:**
+  - evacuated → safe
+  - `urgent_review` → critical
+  - `priority_review` or `standard_review` → moderate
+- **Resident instructions (at most 4 lines)** come from the civilian's evacuation route:
+  - **Go:** fire floors; route smoke ("Your route is clear." or "Smoke on your route. Stay low."); first stair as "Take the WEST STAIR down." or, on F1, "Go to the MAIN ENTRANCE."; "Do not use the elevator."
+  - **Stay** (route `unreachable`): the four shelter-in-place lines.
+  - **Out** (evacuated).
+  - The Go/Stay dev override still applies.
+- **Route-change system messages** compare consecutive evacuation routes:
+  - "Route blocked · Shelter in place"
+  - "Route open · Exit via <exit>"
+  - "Route updated · <old exit> → <new exit>"
+
+## R5. 3D building view
+
+- three.js `0.186.1` (npm, matching the demo's vendored build), OrbitControls, CSS2DRenderer.
+- Scene coordinates: `x' = x − 20`, `y' = elevation × 7/4` (floor spacing exaggerated for visibility), `z' = −(y − 10)`.
+- Static geometry comes from `src/data/jacobsLayout.ts`: a 40×20 m shell plus footprints for every engine room, corridor, stair and elevator node, an F1 lobby band, entrances and the staging pad, all in `JACOBS_LOCAL` meters. Each footprint must contain its node's point.
+- Furnishings come from the demo (`demo/src/furnishings.js` `makeFurnishing`) and firefighters from `demo/src/response-view.js` `makeFirefighter`, re-placed in engine coordinates. All materials map onto the M3 token palette.
+- Dynamic layers:
+  - civilian markers with mono labels, colored by tone
+  - responder figures
+  - hazards: fire, smoke, blocked
+  - route tubes: rescue routes solid; the focused civilian's evacuation route dashed
+  - spread-risk heat on node footprints
+- Floor isolation (All, B, F1, F2, F3), a shell toggle, and click-picking of markers and nodes.
+- A `BuildingView3D` React wrapper keeps the small-props contract: `graph`, `markers`, `hazards`, `paths`, `risk`, `focusFloor`, `highlightNodeId`, `onPickEntity`, `onPickNode`.
+
+## R6. Feature mapping (replaces 9.3–9.4, 10)
+
+- **Firefighter map:**
+  - **Priority list** from `/rescue/prioritize`: room label, people count, priority, reason, nearest responder.
+  - **Marker card:** room, floor, people, conditions, flags, last message, **Assign Alpha/Bravo** (`/routes/compute`), Message, View as resident.
+  - **Sim mode tools:**
+    - Fire (`/spread/ignite`), Smoke and Blocked (`POST /hazards`, verified), each applied by clicking a node
+    - Remove (`DELETE /hazards/{id}`) by clicking a hazard
+    - Move civilian: click a civilian, then a node (`/civilians/location`)
+  - **Camera strip:** cameras are pinned to engine nodes. "Simulate detection" posts a `smoke` observation at the camera's node (`source: simulated_camera`).
+- **Resident map:** instruction card (R4); 3D building with other floors dimmed, the resident's floor and room highlighted, and their evacuation route; AR preview driven by the evacuation route's `steps` (instruction, distance, `bearing_degrees` arrow, upcoming steps).
+- **Comms:** unchanged UX.
+  - Resident free text → `POST /civilians/report` with `civilian_id`, and the text appended to the civilian's prior report so conditions accumulate.
+  - **I'm trapped** / **Can't move** → the same, with "I'm trapped" or "I can't move" appended.
+  - **I'm out** → `POST /civilians/location` to `EXT_STAGING`.
+  - Seeded thread content is keyed by scenario order (`CIV_001`… on a fresh engine).
+- **Run:** `npm run dev` (frontend), `npm run engine` (uvicorn on 8787), `npm run demo` (both, via `scripts/demo.mjs`, no new dependency).
