@@ -10,6 +10,7 @@ import { MapToolbar } from './MapToolbar'
 import { MarkerCard } from './MarkerCard'
 import { OverlayToggles } from './OverlayToggles'
 import { PriorityList } from './PriorityList'
+import { SimControls } from './SimControls'
 
 const EMPTY_RISK: Record<string, number> = {}
 
@@ -23,6 +24,13 @@ export function FirefighterMap() {
   const selectedId = useSentinel((s) => s.selectedCivilianId)
   const hoveredId = useSentinel((s) => s.hoveredCivilianId)
   const selectCivilian = useSentinel((s) => s.selectCivilian)
+  const simMode = useSentinel((s) => s.simMode)
+  const simTool = useSentinel((s) => s.simTool)
+  const moveSourceId = useSentinel((s) => s.moveSourceId)
+  const setMoveSource = useSentinel((s) => s.setMoveSource)
+  const addHazard = useSentinel((s) => s.addHazard)
+  const removeHazard = useSentinel((s) => s.removeHazard)
+  const moveCivilian = useSentinel((s) => s.moveCivilian)
   const civilians = useCivilians()
   const responders = useResponders()
   const nodes = useNodes()
@@ -32,13 +40,36 @@ export function FirefighterMap() {
   const hazards = useMemo(() => buildHazards(snapshot?.hazards ?? [], nodes, graph?.edges ?? []), [snapshot, nodes, graph])
   const paths = useMemo(() => buildPaths(snapshot?.routes ?? [], focusId ? evacuations[focusId] : null, focusId), [snapshot, evacuations, focusId])
 
+  const isCivilian = (id: string) => civilians.some((c) => c.entity_id === id)
   const onPickEntity = (id: string) => {
-    if (civilians.some((c) => c.entity_id === id)) selectCivilian(id)
+    if (!isCivilian(id)) return
+    if (simMode && simTool === 'move') setMoveSource(id)
+    else selectCivilian(id)
   }
+  const onPickNode = (nodeId: string) => {
+    if (!simMode) return
+    if (simTool === 'fire' || simTool === 'smoke' || simTool === 'blocked') void addHazard(simTool, nodeId)
+    else if (simTool === 'move' && moveSourceId) {
+      void moveCivilian(moveSourceId, nodeId)
+      setMoveSource(null)
+    }
+  }
+  const onPickHazard = (hazardId: string) => {
+    if (simMode && simTool === 'remove') void removeHazard(hazardId)
+  }
+  const pickableNodes = simMode && (simTool === 'fire' || simTool === 'smoke' || simTool === 'blocked' || (simTool === 'move' && moveSourceId !== null))
+  const moveSource = simMode && simTool === 'move' && moveSourceId ? civilians.find((c) => c.entity_id === moveSourceId)?.graph_node_id ?? null : null
 
   return (
     <>
-      <MapToolbar leading={<FloorSelector />}>
+      <MapToolbar
+        leading={
+          <div className="flex items-center gap-2">
+            <FloorSelector />
+            <SimControls />
+          </div>
+        }
+      >
         <OverlayToggles />
       </MapToolbar>
       <div className="flex min-h-0 flex-1">
@@ -54,6 +85,10 @@ export function FirefighterMap() {
               showRisk={overlays.risk}
               floor={floor}
               onPickEntity={onPickEntity}
+              onPickNode={onPickNode}
+              onPickHazard={onPickHazard}
+              pickableNodes={pickableNodes}
+              highlightNodeId={moveSource}
             />
             <MarkerCard />
           </div>
