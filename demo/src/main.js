@@ -43,16 +43,16 @@ document.querySelector('#app').innerHTML = `
       <div class="scenario-bottom"><span class="tiny-dot"></span>Repeatable incident · same starting conditions</div>
     </aside>
     <main class="main-panel">
-      <div class="scene-header"><div><h2>Building overview</h2><p>Rotate to explore. Select a ping to inspect.</p></div><div class="status-pill" id="simulation-status"><span></span>Ready to begin</div></div>
+      <div class="scene-header"><div><h2>Building overview</h2><p>Choose a crew for its route. Select a floor for room labels.</p></div><div class="status-pill" id="simulation-status"><span></span>Ready to begin</div></div>
       <div class="scene-stats"><div>${icon('person')}<span><strong id="remaining-count">8</strong><small>Need assistance</small></span></div><div>${icon('shield')}<span><strong id="rescued-count">0<span> / 8</span></strong><small id="outside-label">Safely outside</small></span></div><div>${icon('flame')}<span><strong id="fire-count">4</strong><small>Burning zones</small></span></div><div>${icon('clock')}<span><strong id="elapsed">00:00</strong><small>Incident time</small></span></div></div>
       <div class="scene-wrap"><div id="scene" aria-label="Interactive Jacobs Hall building. Drag to rotate; scroll to zoom." role="group"></div>
         <div class="view-toolbar"><div class="view-tabs"><button id="perspective-button" class="active" aria-pressed="true">3D view</button><button id="top-button" aria-pressed="false">Top view</button></div><button id="shell-button" class="toolbar-button" aria-pressed="false">${icon('layers')}<span>Exterior</span></button><button id="camera-button" class="toolbar-button" aria-label="Reset camera" title="Reset camera">${icon('arrows')}</button></div>
         <div class="scene-orientation">${icon('compass')}<span>N</span></div>
         <div id="selected-person" class="selected-person hidden"></div>
         <div class="floor-control"><span>Floor</span><div id="floor-buttons"><button class="active" data-floor="all" aria-pressed="true">All</button>${LEVELS.map(f=>`<button data-floor="${f}" aria-pressed="false">${f===0?'B':f}</button>`).join('')}</div></div>
-        <div class="scene-hint">Drag to rotate <span>·</span> Scroll to zoom <span>·</span> Right-drag to pan</div>
+        <div class="scene-hint">Floors spaced for visibility <span>·</span> Drag to rotate <span>·</span> Scroll to zoom</div>
       </div>
-      <div class="map-legend"><span><i class="legend-person"></i>Firefighter</span><span><i class="legend-urgent"></i>Needs rescue</span><span><i class="legend-route"></i>Unit route</span><span><i class="legend-escape"></i>Safe handoff</span><span><i class="legend-blocked">×</i>Blocked</span></div>
+      <div class="map-legend"><span><i class="legend-person"></i>Firefighter</span><span><i class="legend-urgent"></i>Needs rescue</span><span><i class="legend-route"></i>Selected crew</span><span><i class="legend-escape"></i>Safe handoff</span><span><i class="legend-blocked">×</i>Blocked</span></div>
     </main>
     <aside class="guidance-panel">
       <div class="panel-heading"><span class="section-icon">${icon('route')}</span><span>Firefighter guidance</span><span id="live-dot" class="live-dot"></span></div>
@@ -96,6 +96,7 @@ function instruction(){
 function renderUi(force=false){
   const stamp=Math.floor(sim.time*2);if(!force&&stamp===lastUi)return;lastUi=stamp;
   const ff=activeUnit(),target=sim.people.find(p=>p.id===(ff.target??ff.carrying[0]));
+  view?.setActiveUnit(ff.id);
   document.querySelector('#remaining-count').textContent=sim.people.filter(p=>['waiting','escorted','stranded'].includes(p.status)).length;
   document.querySelector('#rescued-count').innerHTML=`${sim.rescued}<span> / ${sim.people.length}</span>`;
   document.querySelector('#outside-label').textContent=sim.walking?`${sim.walking} walking out`:'Safely outside';

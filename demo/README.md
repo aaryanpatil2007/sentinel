@@ -4,7 +4,7 @@ A standalone browser demo of UC Berkeley’s Jacobs Institute for Design Innovat
 
 ## Open the demo
 
-Open [`jacobs-demo.html`](jacobs-demo.html) directly in a browser. No installation, server, credentials, or backend is required. Choose a fire mode, select **1–3 firefighters**, and press **Start rescue**. Click a crew card to follow that unit’s instructions.
+Open [`jacobs-demo.html`](jacobs-demo.html) directly in a browser. No installation, server, credentials, or backend is required. Choose a fire mode, select **1–3 firefighters**, and press **Start rescue**. Click a crew card to follow that unit’s instructions and show its route. The overview uses spaced floors, compact person markers, and no furniture or street props. Select a floor to reveal room labels; Exterior shows the facade. Floor spacing is exaggerated for visibility and does not change rescue distances or timing.
 
 For development with Node.js 22 or newer:
 
