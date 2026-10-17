@@ -177,15 +177,24 @@ per-node ignition probability. Two interchangeable backends:
 - `MonteCarloPredictor`: ~500 rollouts, ignition frequency per node. Always
   available; demo ground truth.
 - `SurrogatePredictor`: scikit-learn gradient-boosted classifier trained on
-  ~5k rollouts. Per-node features: graph distance to nearest fire, count of
-  independent paths to fire, same-floor flag, min edge-openness along nearest
-  path, smoke state. One fast pass instead of 500 rollouts. Trained by
-  `train_spread_model.py`; small `.joblib` checkpoint committed; held-out AUC
-  vs. Monte Carlo labels reported honestly in INTEGRATION.md.
+  rollouts from **many randomized building-graph variants** (perturbed
+  layouts, room sizes, door/edge types, stair placements, ignition points) —
+  not on Jacobs Hall itself. Per-node features are purely architectural and
+  node-identity-free: graph distance to nearest fire, count of independent
+  paths to fire, same-floor flag, min edge-openness along nearest path, smoke
+  state. One fast pass instead of 500 rollouts. Trained by
+  `train_spread_model.py` (which includes the random building generator);
+  small `.joblib` checkpoint committed.
 
-The surrogate is a **learned surrogate of our own simulator** and is presented
-as exactly that. If training underperforms or time runs out, the Monte Carlo
-backend ships and the surrogate is reported as not completed — never claimed.
+**Headline validation:** the model is evaluated on buildings held out of
+training — including Jacobs Hall, which it never sees during training — with
+AUC vs. Monte Carlo labels reported honestly in INTEGRATION.md. The
+generalization claim is "predicts spread from building architecture on an
+unseen building"; the ground-truth dynamics remain our simulator's
+(plausible-physics, labeled `simulated`), and the model is presented as a
+learned surrogate of exactly that. If training underperforms or time runs
+out, the Monte Carlo backend ships and the surrogate is reported as not
+completed — never claimed.
 
 **Exposure:** risk field feeds the routing cost term and is served at
 `GET /spread/prediction` for the building view's heat overlay.
