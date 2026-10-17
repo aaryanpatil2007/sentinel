@@ -74,21 +74,39 @@ No gradients. Hierarchy from surface tints, not shadows. One accent (primary) pe
 ## 5. Folder structure
 
 ```
-src/
-  main.tsx, App.tsx, index.css, types.ts
-  components/
-    ui/        Button, IconButton, SegmentedControl, StatusDot, StatusChip, Panel, PanelHeader,
-               MonoText, Kbd, Tooltip, InlineConfirm, stateLayer.ts
-    layout/    AppShell, TopBar, IncidentStatus, DevCorner
-    map/       MapPanel, BuildingView, BuildingGeometry, project.ts, OverlayLayer, PathLayer,
-               MarkerLayer, PersonMarker, MarkerCard, OverlayToggles, Legend, LastUpdated,
-               MapToolbar, SimControls, PriorityList, CameraStrip, CameraTile,
-               InstructionCard, ARView
-    comms/     CommsPanel, FirefighterComms, ThreadList, ThreadView, ThreadHeader,
-               ResidentComms, MessageRow, QuickReplies, Composer
-  lib/         perception.ts, movement.ts, routing.ts, guidance.ts, priority.ts, camera.ts, grid.ts
-  data/        mock.ts
-  store/       index.ts, worldSlice.ts, commsSlice.ts, uiSlice.ts, selectors.ts
+index.html, package.json, tsconfig.json, vite.config.ts, tailwind.config.js, postcss.config.js, .gitignore, README.md
+tests/theme.test.ts                     design-token guard
+src/main.tsx, src/App.tsx, src/index.css, src/vite-env.d.ts
+src/types.ts                            all domain types + FLOORS
+src/lib/geometry.ts                     plan constants, units, doors, staging
+src/lib/grid.ts                         hazard grid helpers
+src/lib/format.ts                       clocks, distances, emphasis splitting
+src/lib/labels.ts                       status/quick-reply labels, senders, limits
+src/lib/routing.ts                      exitPath, routeFor, entryRouteFor, getRescueRoutes (stub)
+src/lib/guidance.ts                     instructionsFor, turnDirection, hallwayHazard (stub)
+src/lib/priority.ts                     rank (stub)
+src/lib/movement.ts                     advanceAlong, stepPeople (stub)
+src/lib/perception.ts                   detect, applyDetection (stub)
+src/lib/camera.ts                       getCameraFeeds (stub)
+src/lib/cn.ts, src/lib/motion.ts        class joiner, motion presets
+src/data/mock.ts                        createMockState, thread ids
+src/store/types.ts                      SentinelState, SliceCreator
+src/store/events.ts                     system messages, appendMessages
+src/store/quickReply.ts                 applyQuickReply
+src/store/worldSlice.ts, commsSlice.ts, uiSlice.ts
+src/store/index.ts                      useSentinel, persistence
+src/store/selectors.ts                  deriveWorld, useDerived, usePerson, useThread
+src/hooks/useNow.ts, src/hooks/useDismiss.ts
+src/components/ui/                      Button, IconButton, SegmentedControl, StatusDot, StatusChip, QuickReplyChip,
+                                        Panel, PanelHeader, MonoText, InlineConfirm, Emphasis, tone.ts
+src/components/layout/                  AppShell, TopBar, IncidentStatus, DevMenu, ErrorBoundary
+src/components/map/                     types.ts, project.ts, overlays.ts, paths.ts, BuildingView, BuildingGeometry,
+                                        OverlayLayer, PathLayer, MarkerLayer, PersonMarker, PaintSurface, Swatch,
+                                        MapPanel, MapToolbar, OverlayToggles, Legend, LastUpdated, FirefighterMap,
+                                        MarkerCard, PriorityList, SimControls, CameraStrip, CameraTile,
+                                        ResidentMap, InstructionCard, ARView
+src/components/comms/                   CommsPanel, FirefighterComms, ThreadList, ThreadView, ThreadHeader,
+                                        MessageList, MessageRow, Composer, ResidentComms, QuickReplies
 ```
 
 Files stay small and single-purpose (target < 300 lines).
@@ -99,12 +117,12 @@ Files stay small and single-purpose (target < 300 lines).
 type Floor = 1 | 2 | 3 | 4
 type Priority = 'critical' | 'moderate' | 'safe'
 type Status = 'trapped' | 'immobile' | 'sheltering' | 'evacuating' | 'evacuated' | 'unknown'
-type Point = { floor: Floor; x: number; y: number }       // per-floor plan units, 1000 × 400
+type Point = { floor: Floor; x: number; y: number }       // per-floor plan units, 1000 × 300
 type Person = {
   id: string; unit: string; pos: Point; count: number
   priority: Priority; status: Status; mobility: string[]; lastUpdate: number
 }
-type HazardGrid = Record<Floor, number[]>                   // 24 × 10 cells, row-major; 0 clear, 1 smoke, 2 fire
+type HazardGrid = Record<Floor, number[]>                   // 24 × 8 cells, row-major; 0 clear, 1 smoke, 2 fire
 type Region = { floor: Floor; x: number; y: number; w: number; h: number }
 type World = { people: Person[]; hazards: HazardGrid; structural: Region[] }
 type Route = {
@@ -141,7 +159,7 @@ grid.ts        cellAt(point), pointOfCell(floor, col, row), isBlocked(world, poi
 
 **Data flow:** any change to `World` (drag, brush, step, quick reply, CV) → memoized selectors in `store/selectors.ts` recompute routes, ranked list and instructions → map, priority list, instruction card, AR view and threads all update. Derived values are never stored.
 
-**Stub router (~50 lines, intentional deviation from "hardcoded paths").** Hardcoded polylines break once people can be dragged, so the stub uses a fixed waypoint graph: unit door → hallway centerline → nearest stairwell whose cells along the path are not fire → down stair shaft → F1 → nearest exit. If both stairs are blocked on the person's floor or below, it returns `blocked: true` (stay in place). Entry routes are the reverse from staging outside Exit B. Distance computed from polyline length with a fixed plan-unit-to-meter scale; ETA at 1.2 m/s.
+**Stub router (~50 lines, intentional deviation from "hardcoded paths").** Hardcoded polylines break once people can be dragged, so the stub uses a fixed waypoint graph: unit door → hallway centerline → nearest stairwell whose cells along the path are not fire → down stair shaft → F1 → nearest exit. If both stairs are blocked on the person's floor or below, it returns `blocked: true` (stay in place). Entry routes are the reverse from staging outside Exit B. Distance computed from polyline length with a fixed plan-unit-to-meter scale; ETA at 1.2 m/s. A path through a structural-risk region costs an extra 20 m when choosing between stairs; the reported distance is unaffected.
 
 **Stub priority:** critical first, then moderate, then safe; ties by distance from staging.
 
@@ -153,7 +171,7 @@ grid.ts        cellAt(point), pointOfCell(floor, col, row), isBlocked(world, poi
 
 One Zustand store `useSentinel` composed from slices:
 
-- **worldSlice:** `people`, `hazards`, `structural`; actions `movePerson(id, pos)`, `paintCell(floor, col, row, value)`, `stepSim()`, `setPersonStatus(id, status, priority)`.
+- **worldSlice:** `people`, `hazards`, `structural`; actions `movePerson(id, pos)`, `paintCell(floor, col, row, value)`, `stepSim()`, `commitWorld(next, messages)`.
 - **commsSlice:** `threads`; actions `sendMessage(threadId, msg)`, `sendQuickReply(personId, reply)`, `clearThread(threadId)`, `markRead(threadId)`.
 - **uiSlice:** `perspective`, `viewingAsId` (default 3B), `selectedPersonId`, `hoveredPersonId`, `overlays {fire, smoke, structural}`, `simMode`, `brush ('fire'|'smoke'|'erase')`, `residentView ('building'|'ar')`, `devGoStay ('auto'|'go'|'stay')`, `expandedCameraId`.
 - Global action `resetDemo()` restores mock data.
