@@ -142,3 +142,5 @@
 .locked-room-label.forced-open { background:#edf7ef; border-color:#9ccab1; color:#287854; }
 
 .delay-button{width:100%;margin-top:7px;min-height:32px;padding:6px 8px;border:1px solid #dab292;border-radius:5px;background:#fff7ec;color:#885629;font-size:10px;font-weight:600}.delay-button:hover:not(:disabled){background:#fcebd7}.delay-button:disabled{opacity:.5}
+
+.strategy-row{margin-top:12px}.strategy-row label{display:block;font-size:10px;font-weight:600;margin-bottom:5px}.strategy-row select{width:100%;min-height:32px;border:1px solid #dce3e8;border-radius:5px;background:#f7f9fb;padding:4px 7px;font-size:10px;color:#526b84}

@@ -144,9 +144,9 @@ export function segmentClear(building,a,b,{civilian=false,clearance=civilian?1.1
   }
   return true;
 }
-export function edgeClear(building,a,b,{civilian=false,allowForcedEntry=false}={}){
+export function edgeClear(building,a,b,{civilian=false,allowForcedEntry=false,ignoreHeat=false}={}){
   const edge=building.edges.get(key(a,b)),from=building.nodes.get(a),to=building.nodes.get(b);
-  return !!edge&&!edge.blocked&&(!edge.locked||(allowForcedEntry&&edge.forceable&&!civilian))&&to.heat<.79&&segmentClear(building,from,to,{civilian,ignoreObstacles:edge.solidClear===true});
+  return !!edge&&!edge.blocked&&(!edge.locked||(allowForcedEntry&&edge.forceable&&!civilian))&&(ignoreHeat||to.heat<.79)&&segmentClear(building,from,to,{civilian,ignoreObstacles:edge.solidClear===true});
 }
 export const key = (a,b)=>[a,b].sort().join('|');
 export function createBuilding() {

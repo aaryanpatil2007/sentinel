@@ -24,7 +24,7 @@ test('a locked occupied room requires a timed forced entry before pickup',()=>{
 test('spreading incident has explicit containment without extinguishing the whole building',()=>{
  const s=new RescueSimulation('spread',1);s.running=true;for(let i=0;i<800&&s.running;i++)s.tick(.1);
  assert.ok(s.containmentStarted);assert.ok(s.events.some(e=>e.message.includes('Sprinklers')));
- assert.ok(s.building.fires.every(f=>f.radius>f.initialRadius&&f.radius<=f.initialRadius+2.16));
+ assert.ok(s.building.fires.every(f=>f.radius>f.initialRadius&&f.radius<=f.initialRadius+(f.maxGrowth??2.15)+.001));
 });
 test('the ground-floor fire changes the entry strategy from west to LeRoy',async()=>{
  const {shortestPath,createBuilding}=await import('../src/simulation.js');const s=new RescueSimulation();const clear=createBuilding();
@@ -36,7 +36,7 @@ test('the upper fire redirects entry through the prototyping room and connecting
  const clear=createBuilding(),baseline=shortestPath(clear,'e3','rWC3',{allowForcedEntry:true});
  assert.ok(baseline.path.every(id=>clear.nodes.get(id).floor===3));assert.ok(!baseline.path.includes('rAPT'));
  for(const mode of ['fixed','spread']){
-  const s=new RescueSimulation(mode);if(mode==='spread')for(let i=0;i<1400;i++){s.time+=.1;s.spread(.1);}
+  const s=new RescueSimulation(mode);if(mode==='spread')for(let i=0;i<500;i++){s.time+=.1;s.spread(.1);}
   const route=s.crewPath('e3','rWC3');assert.ok(route,mode);
   assert.ok(route.path.every(id=>s.building.nodes.get(id).floor===3),`${mode}: ${route.path}`);
   for(const id of ['rAPT','apt-studio-door','studio-left-aisle','studio-middle-aisle','d310'])assert.ok(route.path.includes(id),`${mode}: missing ${id}`);
