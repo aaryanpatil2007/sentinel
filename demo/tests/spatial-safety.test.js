@@ -35,9 +35,10 @@ test('fixed and spreading crews and walkers never move across burning footprints
     const after=s.position(p);if(Math.hypot(after.x-position.x,after.y-position.y,after.z-position.z)>.0001)
      assert.ok(segmentClear(s.building,position,after,{clearance:.28}),`${mode}: actor ${p.id} crossed fire at ${s.time}`);
    }
+   for(const ff of s.firefighters)if(ff.next)assert.ok(!s.building.edges.get(key(ff.node,ff.next)).locked,'Crews must open a door before physically crossing it');
    for(const ff of s.firefighters)for(let j=1;j<ff.path.length;j++){
     const a=ff.path[j-1],b=ff.path[j],e=s.building.edges.get(key(a,b));
-    assert.ok(e&&!e.locked);
+    assert.ok(e&&(!e.locked||e.forceable));
    }
   }
   if(mode==='fixed')assert.equal(s.rescued,8);
@@ -45,11 +46,11 @@ test('fixed and spreading crews and walkers never move across burning footprints
 });
 test('an incident blockage still lets a crew complete its retreat',()=>{
  const s=new RescueSimulation(),ff=s.firefighter;
- Object.assign(ff,{node:'c1-4',next:'c1-5',progress:.4,path:[]});
+ Object.assign(ff,{node:'c1-0',next:'c1-1',progress:.4,path:[]});
  s.building.edges.get(key(ff.node,ff.next)).blocked=true;
- s.move(ff,.01,3.4);assert.equal(ff.next,'c1-4');
+ s.move(ff,.01,3.4);assert.equal(ff.next,'c1-0');
  for(let i=0;i<100&&ff.next;i++)s.move(ff,.1,3.4);
- assert.equal(ff.node,'c1-4');assert.equal(ff.next,null);
+ assert.equal(ff.node,'c1-0');assert.equal(ff.next,null);
 });
 test('idle crews withdraw instead of waiting inside the advancing fire',()=>{
  const s=new RescueSimulation('spread',2);s.running=true;
@@ -61,13 +62,13 @@ test('an off-path fire leaves the clear part of a room reachable',()=>{
  const route=shortestPath(b,'c0-2','r10C');assert.ok(route);
  for(let i=1;i<route.path.length;i++)assert.ok(segmentClear(b,b.nodes.get(route.path[i-1]),b.nodes.get(route.path[i])));
 });
-test('a restroom rescue makes the crew use the obstruction detour',()=>{
+test('the upper rescue uses a lower-floor cart detour after fire splits the corridor',()=>{
  const s=new RescueSimulation('fixed',1);assert.ok(s.people.some(p=>p.room==='WC3'));
  s.running=true;let detour=false;
  for(let i=0;i<4000&&s.running;i++){
   s.tick(.1);const ff=s.firefighter;
-  if(ff.next&&[ff.node,ff.next].every(id=>id.startsWith('b3-')))detour=true;
+  if(ff.next&&new Set([ff.node,ff.next]).has('b2-3')&&new Set([ff.node,ff.next]).has('b2-4'))detour=true;
  }
- assert.ok(detour,'The rescue should use the clear-side lane around the fallen whiteboard');
+ assert.ok(detour,'The rescue should use the clear-side lane around the materials cart');
  assert.equal(s.rescued,8);
 });

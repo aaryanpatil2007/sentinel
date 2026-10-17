@@ -1,8 +1,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+import { makeFirefighter, makeResponseVehicle } from './response-view.js';
 import { makeFurnishing } from './furnishings.js';
-import { FLOOR_HEIGHT, LEVELS, ROOMS, UNIT_COLORS, levelLabel, BATHROOMS, LOCKED_ROOMS, OBSTACLES, fireLobes, edgeClear, segmentClear, ROOM_CHARACTER, dangerAppearance } from './building.js';
+import { FLOOR_HEIGHT, LEVELS, ROOMS, UNIT_COLORS, levelLabel, BATHROOMS, LOCKED_ROOMS, OBSTACLES, fireLobes, edgeClear, segmentClear, ROOM_CHARACTER, dangerAppearance, RESPONSE_STAGING, key } from './building.js';
 
 const VIEW_FLOOR_HEIGHT = 8;
 const viewY = y => (y - .48) / FLOOR_HEIGHT * VIEW_FLOOR_HEIGHT + .48;
@@ -30,8 +31,8 @@ export class BuildingView {
     sun.shadow.bias = -.0006; this.scene.add(sun);
     this.materials = new Map(); this.floorGroups = []; this.shellGroups = []; this.pings = new Map(); this.fires = new Map();
     this.world = new THREE.Group(); this.scene.add(this.world);
-    this.crewModels = new Map(); this.walkers = new Map();
-    this.makeGround(); this.makeBuilding(); this.makeMarkers();
+    this.crewModels = new Map(); this.walkers = new Map(); this.assemblyLabels = new Map(); this.doorVisuals = new Map(); this.smokeLayers = new Map(); this.smokeVisible = true;
+    this.makeGround(); this.makeBuilding(); this.makeSmokeLayers(); this.makeMarkers();
     this.pathGroup = new THREE.Group(); this.scene.add(this.pathGroup); this.lastPath = '';
     this.syncCrews();
     this.resetCamera();
@@ -79,13 +80,15 @@ export class BuildingView {
     this.line(this.siteContext,[[-29,-.02,16.5],[29,-.02,16.5]],0x91a7af,.5);
     for(let x=-25;x<=25;x+=10)this.line(this.siteContext,[[x,-.01,19.5],[x+4,-.01,19.5]],0xffffff,.65);
     ghostBox([10,.1,23],[-24,VIEW_FLOOR_HEIGHT-.2,-.3],0xb4c6c6,.21);
+    const response=new THREE.Group();response.userData.floor=1;response.userData.overviewOnly=true;this.world.add(response);this.contextObjects.push(response);
+    for(const placement of RESPONSE_STAGING)makeResponseVehicle(this,response,placement);
     this.label(this.siteContext,'Ground level',[24,.7,-7],'ground-level-label');
     this.label(this.siteContext,'Ridge Road',[4,.55,22],'site-street-label');
     for(const id of ['safe','safe-east']){
       const n=this.sim.building.nodes.get(id),y=viewY(n.y)-.4;
       const group=new THREE.Group();group.userData.floor=n.floor;this.world.add(group);this.contextObjects.push(group);
       this.box(group,[6,.12,3],[n.x,y,n.z],0xb9dace);
-      this.label(group,'✓ Safe exit',[n.x,y+.9,n.z+1.6],'safe-label');
+      this.assemblyLabels.set(id,this.label(group,'✓ Safe exit',[n.x,y+.9,n.z+1.6],'safe-label'));
     }
   }
   makeBuilding() {
@@ -112,8 +115,8 @@ export class BuildingView {
         const locked=LOCKED_ROOMS.has(room.id);
         this.box(group,[1.4,.06,.5],[room.x,y+.32,front],locked?0xc58a3a:0x7da89b);
         if(locked){
-          this.box(group,[1.4,.85,.12],[room.x,y+.7,front],0xc58a3a,{transparent:true,opacity:.8});
-          this.roomLabels.push(this.label(group,'Locked',[room.x,y+1.4,front],'locked-room-label'));
+          const panel=this.box(group,[1.4,.85,.12],[room.x,y+.7,front],0xc58a3a,{transparent:true,opacity:.8}),label=this.label(group,'Locked',[room.x,y+1.4,front],'locked-room-label');
+          this.roomLabels.push(label);this.doorVisuals.set(room.id,{panel,label});
         }
         if(room.kind==='bathroom'){
           for(const direction of [-1,1])this.box(group,[.9,.55,1.1],[room.x+direction*.9,y+.55,room.z-.8],0xf6f7f5);
@@ -130,6 +133,8 @@ export class BuildingView {
         makeFurnishing(this,group,prop,y);
         if(prop.kind==='materialsCart'||prop.kind==='fallenWhiteboard')this.roomLabels.push(this.label(group,prop.label,[prop.x,y+1.5,prop.z],'obstruction-label'));
       }
+      const passageFire=this.sim.building.fires.find(front=>front.floor===f&&(f===1||f===3));
+      if(passageFire)this.roomLabels.push(this.label(group,'Fire blocks through-passage',[passageFire.x,y+1.5,passageFire.z],'blocked-label'));
       for(const [x,name]of [[-16,'E'],[16,'W']]){
         this.box(group,[3,.18,3.5],[x,y+.23,4],0x9dadb3);
         for(let i=0;i<13&&f<3;i++)this.box(group,[2.2,.13,.25],[x,y+.35+i*VIEW_FLOOR_HEIGHT/13,2.5+i*.25],0x586f7e);
@@ -159,11 +164,22 @@ export class BuildingView {
     }
     this.setVisibility();
   }
-  makePerson(color, helmet=false) {
+  makeSmokeLayers(){
+    const canvas=document.createElement('canvas');canvas.width=canvas.height=128;
+    const context=canvas.getContext('2d'),gradient=context.createRadialGradient(64,64,0,64,64,64);
+    gradient.addColorStop(0,'rgba(77,96,111,.3)');gradient.addColorStop(.45,'rgba(91,110,121,.16)');gradient.addColorStop(1,'rgba(110,128,139,0)');
+    context.fillStyle=gradient;context.fillRect(0,0,128,128);this.smokeTexture=new THREE.CanvasTexture(canvas);this.smokeTexture.colorSpace=THREE.SRGBColorSpace;
+    for(const room of ROOMS){
+      const haze=new THREE.Mesh(new THREE.PlaneGeometry(room.w*.96,room.d*.85),new THREE.MeshBasicMaterial({map:this.smokeTexture,transparent:true,opacity:0,depthWrite:false,side:THREE.DoubleSide}));
+      haze.rotation.x=-Math.PI/2;haze.position.set(room.x,(room.floor-1)*VIEW_FLOOR_HEIGHT+.56,room.z);
+      this.floorGroups.find(g=>g.userData.floor===room.floor).add(haze);this.smokeLayers.set(`r${room.id}`,haze);
+    }
+  }
+  toggleSmoke(){this.smokeVisible=!this.smokeVisible;return this.smokeVisible;}
+  makePerson(color) {
     const g=new THREE.Group();
     const body=new THREE.Mesh(new THREE.CapsuleGeometry(.25,.5,3,6),this.material(color).clone());body.position.y=.58;g.add(body);
-    const head=new THREE.Mesh(new THREE.SphereGeometry(.2,10,8),this.material(helmet?0xf0be55:0xf4d3ae));head.position.y=1.2;g.add(head);
-    if(helmet) {const band=this.box(g,[.57,.12,.57],[0,1.35,0],0xf0be55);band.castShadow=false;}
+    const head=new THREE.Mesh(new THREE.SphereGeometry(.2,10,8),this.material(0xf4d3ae));head.position.y=1.2;g.add(head);
     const ring=new THREE.Mesh(new THREE.RingGeometry(.43,.57,24),new THREE.MeshBasicMaterial({color,side:THREE.DoubleSide}));ring.rotation.x=-Math.PI/2;ring.position.y=.02;g.add(ring);
     g.userData.tint={body,ring};return g;
   }
@@ -183,7 +199,7 @@ export class BuildingView {
   syncCrews(){
     for(const [id,model]of this.crewModels){if(!this.sim.firefighters.some(f=>f.id===id)){model.tag.element.remove();this.scene.remove(model.group);model.escorts.forEach(e=>this.scene.remove(e));this.crewModels.delete(id);}}
     for(const ff of this.sim.firefighters)if(!this.crewModels.has(ff.id)){
-      const group=this.makePerson(ff.color,true);const tag=this.label(group,`F${ff.id}`,[0,2.2,0],'unit-map-label');tag.element.style.color=ff.color;this.scene.add(group);
+      const group=makeFirefighter(this,ff.color);const tag=this.label(group,`F${ff.id}`,[0,2.2,0],'unit-map-label');tag.element.style.color=ff.color;this.scene.add(group);
       const escorts=[this.makePerson(0x259a75),this.makePerson(0x259a75)];escorts.forEach(e=>{e.visible=false;this.scene.add(e);});this.crewModels.set(ff.id,{group,tag,escorts});
     }
   }
@@ -199,7 +215,7 @@ export class BuildingView {
         const flame=new THREE.Mesh(new THREE.ConeGeometry(.21,1.35,6),new THREE.MeshBasicMaterial({color:i%2?0xffc353:0xf16a2e,transparent:true,opacity:.9,depthWrite:false}));
         flame.userData={lobe:j,angle:i*2.4,offset:i?.5:0};g.add(flame);tongues.push(flame);
       }
-      const puff=new THREE.Mesh(new THREE.IcosahedronGeometry(.55,1),new THREE.MeshBasicMaterial({color:0x687685,transparent:true,opacity:.12,depthWrite:false}));g.add(puff);smoke.push(puff);
+      const puff=new THREE.Sprite(new THREE.SpriteMaterial({map:this.smokeTexture,transparent:true,opacity:.4,depthWrite:false}));puff.scale.set(2.4,2.4,1);g.add(puff);smoke.push(puff);
     }
     this.scene.add(g);const fire={group:g,lobes,tongues,smoke,floor:front.floor};this.fires.set(front.id,fire);return fire;
   }
@@ -213,7 +229,7 @@ export class BuildingView {
     const make=(ids,color)=>{
       for(let i=1;i<ids.length;i++){
         const a=this.sim.building.nodes.get(ids[i-1]),b=this.sim.building.nodes.get(ids[i]);
-        if(!edgeClear(this.sim.building,a.id,b.id))continue;
+        if(!edgeClear(this.sim.building,a.id,b.id,{allowForcedEntry:true}))continue;
         const curve=new THREE.LineCurve3(new THREE.Vector3(a.x,viewY(a.y)+.3,a.z),new THREE.Vector3(b.x,viewY(b.y)+.3,b.z));
         const mesh=new THREE.Mesh(new THREE.TubeGeometry(curve,1,.13,6,false),new THREE.MeshBasicMaterial({color,transparent:true,opacity:.95,depthTest:true}));
         mesh.renderOrder=10;mesh.userData.floors=[a.floor,b.floor];this.pathGroup.add(mesh);
@@ -229,7 +245,7 @@ export class BuildingView {
     this.roomLabels.forEach(label=>{label.visible=this.floor!==null;});
     this.ground.visible=this.floor===null;
     this.siteContext.visible=this.floor===null||this.floor===0||this.floor===1;
-    this.contextObjects.forEach(object=>{object.visible=this.floor===null||object.userData.floor===this.floor;});
+    this.contextObjects.forEach(object=>{object.visible=this.floor===null||(!object.userData.overviewOnly&&object.userData.floor===this.floor);});
     this.shellGroups.forEach(g=>{g.visible=this.shell;});this.roof.visible=this.shell&&this.floor===null;
     for(const {label,floors}of this.blockMarkers)label.visible=this.floor===null||floors.includes(this.floor);
   }
@@ -255,8 +271,14 @@ export class BuildingView {
       ping.el.title=`Person ${p.id} · ${n.label} · ${appearance.label} danger · ${Math.round(this.sim.urgency(p)*100)}%`;
       ping.group.visible=['waiting','stranded'].includes(p.status)&&this.onFloor(location.y);
       const owner=this.sim.firefighters.find(f=>f.pickups.includes(p.id));ping.el.classList.toggle('target',owner?.id===this.activeUnit);ping.el.setAttribute('aria-label',`Person ${p.id} · ${n.label} · ${appearance.label.toLowerCase()} danger${owner?` · assigned to unit ${owner.id}`:''}`);
-      const walker=this.walkers.get(p.id),pos=this.sim.position(p);walker.group.position.set(pos.x,viewY(pos.y),pos.z);walker.group.visible=p.status==='walking'&&this.onFloor(pos.y);walker.tag.visible=this.floor!==null;this.tintPerson(walker.group,appearance);walker.tag.element.style.color=appearance.color;walker.tag.element.textContent=`P${p.id} · ${appearance.label}`;
+      const walker=this.walkers.get(p.id),pos=this.sim.position(p),destination=new THREE.Vector3(pos.x,viewY(pos.y),pos.z);
+      if(p.status==='rescued'&&walker.group.visible)walker.group.position.lerp(destination,.18);else walker.group.position.copy(destination);
+      walker.group.visible=['walking','rescued'].includes(p.status)&&this.onFloor(pos.y);walker.group.userData.status=p.status;
+      walker.tag.visible=this.floor!==null&&p.status==='walking';this.tintPerson(walker.group,appearance);walker.tag.element.style.color=appearance.color;walker.tag.element.textContent=`P${p.id} · ${appearance.label}`;
     }
+    for(const [id,label]of this.assemblyLabels){const count=this.sim.people.filter(p=>p.status==='rescued'&&p.node===id).length;label.element.textContent=count?`✓ Safe exit · ${count} safe`:'✓ Safe exit';}
+    for(const [id,haze]of this.smokeLayers){const node=this.sim.building.nodes.get(id);haze.material.opacity=this.smokeVisible?Math.min(.32,node.smoke*.36):0;}
+    for(const [room,{panel,label}]of this.doorVisuals){const door=this.sim.building.edges.get(key(`r${room}`,`d${room}`));panel.visible=door.locked;label.element.textContent=door.locked?'Locked':'Forced open';label.element.classList.toggle('forced-open',!door.locked);}
     for(const front of this.sim.building.fires){
       const fire=this.fires.get(front.id)??this.makeFire(front),lobes=fireLobes(front);
       fire.group.visible=this.floor===null||front.floor===this.floor;
@@ -268,10 +290,11 @@ export class BuildingView {
         t.position.set(lobe.x+Math.cos(t.userData.angle)*offset,.65,lobe.z+Math.sin(t.userData.angle)*offset);
         t.scale.y=.8+Math.sin(elapsed*7+i*2)*.18;
       });
-      fire.smoke.forEach((p,i)=>{p.position.set(lobes[i].x,1.6+((elapsed*.5+i*.5)%2),lobes[i].z);});
+      fire.smoke.forEach((p,i)=>{const rise=(elapsed*.32+i*.6)%2.6;p.visible=this.smokeVisible;p.position.set(lobes[i].x+Math.sin(elapsed*.35+i)*.25,1.1+rise,lobes[i].z);p.material.opacity=(this.sim.containmentStarted?.26:.4)*(1-rise/3.8);p.scale.setScalar(1.8+rise*.4);});
     }
     for(const ff of this.sim.firefighters){
       const model=this.crewModels.get(ff.id),p=this.sim.position(ff);model.group.position.set(p.x+(ff.node==='safe'?(ff.id-2)*2.4*(ff.next?1-ff.progress:1):0),viewY(p.y),p.z);model.group.visible=this.onFloor(p.y);model.tag.visible=ff.id===this.activeUnit;model.tag.element.textContent=`F${ff.id}`;model.tag.element.classList.toggle('active-unit',ff.id===this.activeUnit);
+      const toward=this.sim.building.nodes.get(ff.next??ff.path[0]);if(toward&&Math.hypot(toward.x-p.x,toward.z-p.z)>.01)model.group.rotation.y=Math.atan2(toward.x-p.x,toward.z-p.z);
       model.escorts.forEach((e,i)=>{
         e.visible=ff.carrying.length>i&&model.group.visible;
         const escorted=this.sim.people.find(person=>person.id===ff.carrying[i]);if(escorted)this.tintPerson(e,dangerAppearance(this.sim.urgency(escorted)));

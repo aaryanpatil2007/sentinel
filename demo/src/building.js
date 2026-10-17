@@ -1,6 +1,7 @@
 export const FLOOR_HEIGHT = 4.5;
 export const LEVELS = [0,1,2,3];
 export const levelLabel = floor => floor === 0 ? 'Basement' : `Floor ${floor}`;
+export const FORCE_ENTRY_SECONDS = 6;
 export const UNIT_COLORS = ['#3475cd','#895bb2','#188c89'];
 export const SOURCES = {
   guide:'https://jacobsinstitute.berkeley.edu/our-spaces-at-a-glance/',
@@ -31,7 +32,7 @@ export const ROOMS = [
 ];
 // Incident props are fictional; the public diagrams do not specify locked doors or debris.
 export const BATHROOMS = LEVELS.map(floor=>({id:`WC${floor}`,floor,x:floor===1?-13.5:14,z:-4,w:4,d:5,label:'Restrooms',kind:'bathroom'}));
-export const LOCKED_ROOMS = new Set(['120A','210A','310A']);
+export const LOCKED_ROOMS = new Set(['120A','120B','210A','310A']);
 // Equipment types are grounded in Berkeley's current equipment/space guides and
 // 2024 interior photographs. This is a selective arrangement, not an inventory survey.
 const furnishing=(id,room,kind,x,z,w,d,h=1,extra={})=>({id,room,kind,floor:ROOMS.find(r=>r.id===room).floor,x,z,w,d,h,...extra});
@@ -93,6 +94,11 @@ export function dangerAppearance(value){
   const luminance=channels.map(c=>{const v=c/255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4;}).reduce((sum,c,i)=>sum+c*[.2126,.7152,.0722][i],0);
   return {color:hex(channels),background:hex(channels.map(c=>Math.round(c*.1+255*.9))),ink:luminance>.179?'#000000':'#ffffff',label:risk>=.85?'Critical':risk>=.7?'Severe':risk>=.5?'High':risk>=.25?'Moderate':'Low'};
 }
+// Two compact apparatus positions on the street, beyond all evacuation links.
+export const RESPONSE_STAGING = [
+  {id:'engine',kind:'engine',floor:1,x:10,z:20.5,w:8.6,d:3,h:2.7},
+  {id:'ladder',kind:'ladder',floor:1,x:-18,z:20.5,w:8.6,d:3,h:2.7},
+];
 export const fireLobes = fire => [
   {x:fire.x,z:fire.z,radius:fire.radius},
   {x:fire.x+fire.radius*.68,z:fire.z+fire.radius*.28,radius:fire.radius*.67},
@@ -119,8 +125,8 @@ function floorSegment(a,b,floor){
 }
 // Flame clearance is wider for unescorted civilians. Solid furniture uses body
 // clearance independently, so a safe aisle is not treated as a heat exclusion zone.
-export function segmentClear(building,a,b,{civilian=false,clearance=civilian?1.15:.5,fixtureClearance=.5,ignoreFire=false}={}){
-  for(const box of building.obstacles??OBSTACLES){const segment=floorSegment(a,b,box.floor);if(segment&&crossesBox(...segment,box,fixtureClearance))return false;}
+export function segmentClear(building,a,b,{civilian=false,clearance=civilian?1.15:.5,fixtureClearance=.5,ignoreFire=false,ignoreObstacles=false}={}){
+  if(!ignoreObstacles)for(const box of building.obstacles??OBSTACLES){const segment=floorSegment(a,b,box.floor);if(segment&&crossesBox(...segment,box,fixtureClearance))return false;}
   if(ignoreFire)return true;
   for(const fire of building.fires??[]){
     const segment=floorSegment(a,b,fire.floor);if(!segment)continue;
@@ -132,9 +138,9 @@ export function segmentClear(building,a,b,{civilian=false,clearance=civilian?1.1
   }
   return true;
 }
-export function edgeClear(building,a,b,{civilian=false}={}){
+export function edgeClear(building,a,b,{civilian=false,allowForcedEntry=false}={}){
   const edge=building.edges.get(key(a,b)),from=building.nodes.get(a),to=building.nodes.get(b);
-  return !!edge&&!edge.blocked&&!edge.locked&&to.heat<.79&&segmentClear(building,from,to,{civilian});
+  return !!edge&&!edge.blocked&&(!edge.locked||(allowForcedEntry&&edge.forceable&&!civilian))&&to.heat<.79&&segmentClear(building,from,to,{civilian,ignoreObstacles:edge.solidClear===true});
 }
 export const key = (a,b)=>[a,b].sort().join('|');
 export function createBuilding() {
@@ -161,7 +167,8 @@ export function createBuilding() {
     const door=`d${room.id}`,doorZ=room.z>5?5.5:Math.min(1.4,room.z+room.d/2);
     add(door,room.floor,room.x,doorZ,'door',`${room.label} doorway`);
     link(id,door,'door');link(door,`c${room.floor}-${index}`,'door');
-    if(LOCKED_ROOMS.has(room.id))edges.get(key(id,door)).locked=true;
+    if(LOCKED_ROOMS.has(room.id))Object.assign(edges.get(key(id,door)),{locked:true,forceable:true,room:room.label});
+    if(room.z>5)link(door,`b${room.floor}-${index}`,'door');
   }
 
   add('west-exit',1,23,5,'exit','Etcheverry Plaza entrance');
@@ -173,7 +180,9 @@ export function createBuilding() {
   edges.get(key('w1','w2')).blocked=true;
   edges.get(key('c0-2','c0-3')).blocked=true;
   edges.get(key('b0-2','b0-3')).blocked=true;
-  for(const edge of edges.values())if(!segmentClear({obstacles:OBSTACLES},nodes.get(edge.a),nodes.get(edge.b),{ignoreFire:true})){edge.blocked=true;edge.obstruction=true;}
+  // Furnishings are static: check each whole edge once. Movement still checks
+  // arbitrary swept segments; route searches only need to recheck changing fire.
+  for(const edge of edges.values()){edge.solidClear=segmentClear({obstacles:OBSTACLES},nodes.get(edge.a),nodes.get(edge.b),{ignoreFire:true});if(!edge.solidClear){edge.blocked=true;edge.obstruction=true;}}
   const adjacency=new Map([...nodes.keys()].map(id=>[id,[]]));
   for(const edge of edges.values()){adjacency.get(edge.a).push({id:edge.b,edge});adjacency.get(edge.b).push({id:edge.a,edge});}
   return {nodes,edges,adjacency,obstacles:OBSTACLES,fires:[],hazardVersion:0};

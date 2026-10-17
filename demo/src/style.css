@@ -138,3 +138,5 @@
 .danger-legend i { display:inline-block; width:52px; height:6px; border-radius:5px; background:linear-gradient(90deg,#248568,#b19e35 30%,#d0792e 58%,#bc392e 78%,#740e26); }
 .character-label strong { display:block; font-size:9px; font-weight:600; }
 .character-label small { display:block; margin-top:3px; font-size:7px; font-weight:400; color:#72878c; }
+
+.locked-room-label.forced-open { background:#edf7ef; border-color:#9ccab1; color:#287854; }
