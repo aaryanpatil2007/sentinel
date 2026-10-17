@@ -24,7 +24,7 @@ The generated `jacobs-demo.html` is committed so that the repository download wo
 
 ## Building reference
 
-The model follows the room groupings and circulation topology in UC Berkeley’s [Jacobs floor guide](https://jacobsinstitute.berkeley.edu/our-spaces-at-a-glance/) and its published diagrams:
+The model follows the room groupings and circulation topology in UC Berkeley’s [Jacobs floor guide](https://jacobsinstitute.berkeley.edu/our-spaces-at-a-glance/) and its published diagrams. A translucent outside ground surface, faint excavation faces, and explicit ground/basement labels show which floor is below grade without hiding its occupants or routes:
 
 - [Basement](https://jacobsinstitute.berkeley.edu/wp-content/uploads/2021/06/Floor-B-Fall-2021.png): teaching studio 10, studio 10C, metal shop, video and robotics lab.
 - [Level 1](https://jacobsinstitute.berkeley.edu/wp-content/uploads/2021/06/Floor-1-Fall-2021.png): makerspaces 110 and 120, their smaller lab rooms, advising 103, and the west lobby.

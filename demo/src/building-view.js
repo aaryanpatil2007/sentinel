@@ -55,6 +55,31 @@ export class BuildingView {
   }
   makeGround() {
     this.ground=this.box(this.world,[56,.2,38],[0,-8.8,3],0xe1e8ed);
+    this.siteContext=new THREE.Group();this.world.add(this.siteContext);
+    const outline=[[-29,-16],[29,-16],[29,23],[-29,23]];
+    const footprint=[[-17.8,-9.7],[-17.8,8.9],[-11.8,8.9],[-11.8,11],[11.8,11],[11.8,8.9],[17.8,8.9],[17.8,-9.7]];
+    const terrain=new THREE.Shape(outline.map(([x,z])=>new THREE.Vector2(x,z)));
+    terrain.holes.push(new THREE.Path(footprint.map(([x,z])=>new THREE.Vector2(x,z))));
+    const surface=new THREE.Mesh(new THREE.ShapeGeometry(terrain),new THREE.MeshBasicMaterial({color:0x9fb8bc,transparent:true,opacity:.28,depthWrite:false,side:THREE.DoubleSide}));
+    surface.rotation.x=Math.PI/2;surface.position.y=-.12;this.siteContext.add(surface);
+    this.line(this.siteContext,[...outline,outline[0]].map(([x,z])=>[x,-.1,z]),0x829fa7,.42);
+    this.line(this.siteContext,[...footprint,footprint[0]].map(([x,z])=>[x,-.08,z]),0x718e99,.55);
+    const ghostBox=(size,pos,color,opacity)=>{
+      const mesh=this.box(this.siteContext,size,pos,color,{transparent:true,opacity,depthWrite:false});
+      mesh.castShadow=false;mesh.receiveShadow=false;return mesh;
+    };
+    // A faint cut face conveys the depth below the outside ground plane.
+    for(const x of [-17.8,17.8]){
+      ghostBox([.04,7.8,18.6],[x,-4.1,-.4],0x8ea6af,.13);
+      this.line(this.siteContext,[[x,-.1,8.9],[x,-7.9,8.9]],0x7896a1,.5);
+    }
+    ghostBox([23.6,7.8,.04],[0,-4.1,11],0x8ea6af,.09);
+    ghostBox([58,.04,6],[0,-.07,19.5],0x8eabb7,.19);
+    this.line(this.siteContext,[[-29,-.02,16.5],[29,-.02,16.5]],0x91a7af,.5);
+    for(let x=-25;x<=25;x+=10)this.line(this.siteContext,[[x,-.01,19.5],[x+4,-.01,19.5]],0xffffff,.65);
+    ghostBox([10,.1,23],[-24,VIEW_FLOOR_HEIGHT-.2,-.3],0xb4c6c6,.21);
+    this.label(this.siteContext,'Ground level',[24,.7,-7],'ground-level-label');
+    this.label(this.siteContext,'Ridge Road',[4,.55,22],'site-street-label');
     for(const id of ['safe','safe-east']){
       const n=this.sim.building.nodes.get(id),y=viewY(n.y)-.4;
       const group=new THREE.Group();group.userData.floor=n.floor;this.world.add(group);this.contextObjects.push(group);
@@ -94,7 +119,7 @@ export class BuildingView {
         // Stair names appear with the isolated floor, keeping overview labels sparse.
         this.roomLabels.push(this.label(group,`${name} stair`,[x,y+.8,6.7],'stair-label'));
       }
-      this.label(group,f===0?'B':String(f),[-20,y+1,8],'floor-label');
+      this.label(group,f===0?'B · Basement':f===1?'1 · Ground':String(f),[-20,y+1,8],'floor-label');
       this.box(shell,[35,VIEW_FLOOR_HEIGHT-.3,.25],[0,y+VIEW_FLOOR_HEIGHT/2,6],0xa2afb3);
       for(const x of [-13,-8,-3,2,7,12])this.box(shell,[4.6,2.9,.16],[x,y+2.1,6.16],0x8aafbe,{metalness:.3,roughness:.22});
       this.box(shell,[.25,3.8,17],[-17.4,y+2,-.5],0x6b7e89);
@@ -178,6 +203,7 @@ export class BuildingView {
     this.floorGroups.forEach(g=>{g.visible=this.floor===null||g.userData.floor===this.floor;});
     this.roomLabels.forEach(label=>{label.visible=this.floor!==null;});
     this.ground.visible=this.floor===null;
+    this.siteContext.visible=this.floor===null||this.floor===0||this.floor===1;
     this.contextObjects.forEach(object=>{object.visible=this.floor===null||object.userData.floor===this.floor;});
     this.shellGroups.forEach(g=>{g.visible=this.shell;});this.roof.visible=this.shell&&this.floor===null;
     for(const {label,floors}of this.blockMarkers)label.visible=this.floor===null||floors.includes(this.floor);
