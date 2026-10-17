@@ -1,18 +1,16 @@
-import type { Priority, QuickReply, Status } from '../types'
-
-export const STATUS_LABEL: Record<Status, string> = {
-  trapped: 'Trapped',
-  immobile: "Can't move",
-  sheltering: 'Sheltering',
-  evacuating: 'Evacuating',
-  evacuated: 'Evacuated',
-  unknown: 'No response',
-}
+import type { ReviewPriority } from '../engine/types'
+import type { Priority, QuickReply } from '../types'
 
 export const PRIORITY_LABEL: Record<Priority, string> = {
   critical: 'Critical',
   moderate: 'Moderate',
   safe: 'Safe',
+}
+
+export const REVIEW_PRIORITY_LABEL: Record<ReviewPriority, string> = {
+  urgent_review: 'Urgent',
+  priority_review: 'Priority',
+  standard_review: 'Standard',
 }
 
 export const QUICK_REPLY_LABEL: Record<QuickReply, string> = {
@@ -28,7 +26,13 @@ export const QUICK_REPLY_TONE: Record<QuickReply, Priority> = {
   'cant-move': 'moderate',
 }
 
+/** Phrases appended to a civilian's report so the engine's triage rules pick them up. */
+export const QUICK_REPLY_REPORT_TEXT: Record<Exclude<QuickReply, 'out'>, string> = {
+  trapped: "I'm trapped.",
+  'cant-move': "I can't move.",
+}
+
+export const RESPONDER_LABEL: Record<string, string> = { UNIT_ALPHA: 'Alpha', UNIT_BRAVO: 'Bravo' }
 export const RESPONDER_SENDER = 'E7 · Reyes'
 export const SYSTEM_SENDER = 'Sentinel'
-export const residentSender = (unit: string) => `Unit ${unit}`
 export const MAX_MESSAGE_LENGTH = 500

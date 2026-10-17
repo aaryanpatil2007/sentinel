@@ -18,7 +18,7 @@ describe('format', () => {
   it('formats distance, ETA and coordinates', () => {
     expect(formatDistance(37.6)).toBe('38 m')
     expect(formatEta(130)).toBe('2:10')
-    expect(formatCoords({ floor: 3, x: 412.4, y: 188.6 })).toBe('F3 · 412, 189')
+    expect(formatCoords({ x: 12, y: 16.44, z: 4, floor_id: 'F2', coordinate_frame: 'JACOBS_LOCAL' })).toBe('F2 · 12.0, 16.4 m')
   })
   it('splits uppercase instruction keywords for emphasis', () => {
     expect(splitEmphasis('Turn RIGHT, take STAIR B down.')).toEqual([

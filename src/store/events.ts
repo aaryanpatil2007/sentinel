@@ -1,7 +1,8 @@
-import type { Message, Route, Status, Thread, World } from '../types'
-import { threadIdFor } from '../data/mock'
-import { STATUS_LABEL, SYSTEM_SENDER } from '../lib/labels'
-import { routeFor } from '../lib/routing'
+import type { Message, Thread } from '../types'
+import { threadIdFor } from '../data/scenarioThreads'
+import { civilianStatus, civiliansOf, describeEvacuationChange, statusChangeText, type NodeIndex } from '../engine/derive'
+import type { IncidentSnapshot, Route } from '../engine/types'
+import { SYSTEM_SENDER } from '../lib/labels'
 
 let sequence = 0
 
@@ -10,29 +11,26 @@ export function newMessageId(now: number): string {
   return `m-${now.toString(36)}-${sequence}`
 }
 
-export function systemMessage(personId: string, text: string, now: number): Message {
-  return { id: newMessageId(now), threadId: threadIdFor(personId), from: 'system', sender: SYSTEM_SENDER, text, at: now }
+export function systemMessage(civilianId: string, text: string, now: number): Message {
+  return { id: newMessageId(now), threadId: threadIdFor(civilianId), from: 'system', sender: SYSTEM_SENDER, text, at: now }
 }
 
-export function statusMessage(personId: string, status: Status, now: number): Message {
-  return systemMessage(personId, `Status changed to ${STATUS_LABEL[status]}`, now)
-}
+type Observation = { snapshot: IncidentSnapshot | null; evacuations: Record<string, Route | null> }
 
-function describeRouteChange(prev: Route, next: Route): string | null {
-  if (next.via === null) return null
-  if (next.blocked && !prev.blocked) return 'Route blocked · Shelter in place'
-  if (!next.blocked && prev.blocked) return `Route open · Take Stair ${next.via}`
-  if (!next.blocked && prev.via !== null && prev.via !== next.via) return `Route updated · Stair ${prev.via} → Stair ${next.via}`
-  return null
-}
-
-export function routeChangeMessages(prev: World, next: World, now: number): Message[] {
+/** System messages for status and evacuation-route changes between two engine observations. */
+export function incidentChangeMessages(prev: Observation, next: Observation, nodes: NodeIndex, now: number): Message[] {
+  if (!prev.snapshot) return []
+  const before = new Map(civiliansOf(prev.snapshot).map((c) => [c.entity_id, c]))
   const messages: Message[] = []
-  for (const person of next.people) {
-    const before = prev.people.find((p) => p.id === person.id)
-    if (!before) continue
-    const text = describeRouteChange(routeFor(before, prev), routeFor(person, next))
-    if (text) messages.push(systemMessage(person.id, text, now))
+  for (const civilian of civiliansOf(next.snapshot)) {
+    const old = before.get(civilian.entity_id)
+    if (!old) continue
+    const status = civilianStatus(civilian, nodes)
+    const statusText = statusChangeText(civilianStatus(old, nodes), status)
+    if (statusText) messages.push(systemMessage(civilian.entity_id, statusText, now))
+    if (status === 'evacuated') continue
+    const routeText = describeEvacuationChange(prev.evacuations[civilian.entity_id], next.evacuations[civilian.entity_id], nodes)
+    if (routeText) messages.push(systemMessage(civilian.entity_id, routeText, now))
   }
   return messages
 }
@@ -43,10 +41,6 @@ export function appendMessages(threads: Thread[], messages: Message[]): Thread[]
   return threads.map((t) => {
     const mine = messages.filter((m) => m.threadId === t.id)
     if (mine.length === 0) return t
-    return {
-      ...t,
-      messages: [...t.messages, ...mine],
-      unread: t.unread + mine.filter((m) => m.from === 'resident').length,
-    }
+    return { ...t, messages: [...t.messages, ...mine], unread: t.unread + mine.filter((m) => m.from === 'resident').length }
   })
 }

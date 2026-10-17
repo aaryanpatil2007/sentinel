@@ -1,14 +1,12 @@
 import type { StateCreator } from 'zustand'
-import type { Incident } from '../types'
 import type { CommsSlice } from './commsSlice'
+import type { EngineSlice } from './engineSlice'
 import type { UiSlice } from './uiSlice'
-import type { WorldSlice } from './worldSlice'
 
-export type SentinelState = WorldSlice &
+export type SentinelState = EngineSlice &
   CommsSlice &
   UiSlice & {
-    incident: Incident
-    resetDemo: () => void
+    resetDemo: () => Promise<void>
   }
 
 export type SliceCreator<T> = StateCreator<SentinelState, [['zustand/persist', unknown]], [], T>

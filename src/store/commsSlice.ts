@@ -1,16 +1,22 @@
 import type { Message, QuickReply, Thread } from '../types'
-import { threadIdFor } from '../data/mock'
-import { MAX_MESSAGE_LENGTH, QUICK_REPLY_LABEL, RESPONDER_SENDER, residentSender } from '../lib/labels'
-import { appendMessages, newMessageId, statusMessage } from './events'
-import { applyQuickReply } from './quickReply'
-import type { SliceCreator } from './types'
+import { threadIdFor } from '../data/scenarioThreads'
+import { civiliansOf, indexNodes, placeLabel } from '../engine/derive'
+import { MAX_MESSAGE_LENGTH, QUICK_REPLY_LABEL, QUICK_REPLY_REPORT_TEXT, RESPONDER_SENDER } from '../lib/labels'
+import { STAGING_NODE } from './engineSlice'
+import { appendMessages, newMessageId } from './events'
+import type { SentinelState, SliceCreator } from './types'
 
 export type CommsSlice = {
   threads: Thread[]
   sendMessage: (threadId: string, from: 'resident' | 'responder', text: string) => void
-  sendQuickReply: (personId: string, reply: QuickReply) => void
+  sendQuickReply: (civilianId: string, reply: QuickReply) => void
   clearThread: (threadId: string) => void
   markRead: (threadId: string) => void
+}
+
+function residentName(state: SentinelState, civilianId: string | undefined): string {
+  const civilian = civiliansOf(state.snapshot).find((c) => c.entity_id === civilianId)
+  return civilian ? placeLabel(civilian, indexNodes(state.graph)) : 'Resident'
 }
 
 export const createCommsSlice =
@@ -21,45 +27,34 @@ export const createCommsSlice =
     sendMessage: (threadId, from, raw) => {
       const text = raw.trim().slice(0, MAX_MESSAGE_LENGTH)
       if (!text) return
-      const { threads, world } = get()
-      const thread = threads.find((t) => t.id === threadId)
+      const thread = get().threads.find((t) => t.id === threadId)
       if (!thread) return
       const now = Date.now()
-      const person = thread.personId ? world.people.find((p) => p.id === thread.personId) : undefined
       const message: Message = {
         id: newMessageId(now),
         threadId,
         from,
-        sender: from === 'responder' ? RESPONDER_SENDER : residentSender(person?.unit ?? ''),
+        sender: from === 'responder' ? RESPONDER_SENDER : residentName(get(), thread.personId),
         text,
         at: now,
       }
-      const touchPerson = person && from === 'resident'
-      set({
-        threads: appendMessages(threads, [message]),
-        world: touchPerson
-          ? { ...world, people: world.people.map((p) => (p.id === person.id ? { ...p, lastUpdate: now } : p)) }
-          : world,
-      })
+      set((s) => ({ threads: appendMessages(s.threads, [message]) }))
+      if (from === 'resident' && thread.personId) void get().reportCivilian(thread.personId, text)
     },
 
-    sendQuickReply: (personId, reply) => {
-      const { world, commitWorld } = get()
-      const person = world.people.find((p) => p.id === personId)
-      if (!person) return
+    sendQuickReply: (civilianId, reply) => {
       const now = Date.now()
-      const updated = applyQuickReply(person, reply, world, now)
       const chip: Message = {
         id: newMessageId(now),
-        threadId: threadIdFor(personId),
+        threadId: threadIdFor(civilianId),
         from: 'resident',
-        sender: residentSender(person.unit),
+        sender: residentName(get(), civilianId),
         text: QUICK_REPLY_LABEL[reply],
         quick: reply,
         at: now,
       }
-      const messages = updated.status !== person.status ? [chip, statusMessage(personId, updated.status, now)] : [chip]
-      commitWorld({ ...world, people: world.people.map((p) => (p.id === personId ? updated : p)) }, messages)
+      set((s) => ({ threads: appendMessages(s.threads, [chip]) }))
+      void (reply === 'out' ? get().moveCivilian(civilianId, STAGING_NODE) : get().reportCivilian(civilianId, QUICK_REPLY_REPORT_TEXT[reply]))
     },
 
     clearThread: (threadId) =>

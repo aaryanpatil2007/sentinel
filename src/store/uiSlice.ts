@@ -1,32 +1,35 @@
-import type { Brush, GoStay, OverlayKind, Perspective, ResidentView } from '../types'
-import { CREW_THREAD_ID, DEFAULT_RESIDENT_ID, threadIdFor } from '../data/mock'
+import type { FloorFilter, GoStay, OverlayKind, Perspective, ResidentView, SimTool } from '../types'
+import { CREW_THREAD_ID, DEFAULT_RESIDENT_ID, threadIdFor } from '../data/scenarioThreads'
 import type { SliceCreator } from './types'
 
 export type UiData = {
   perspective: Perspective
   viewingAsId: string
-  selectedPersonId: string | null
-  hoveredPersonId: string | null
+  selectedCivilianId: string | null
+  hoveredCivilianId: string | null
   selectedThreadId: string
   overlays: Record<OverlayKind, boolean>
+  floor: FloorFilter
   simMode: boolean
-  brush: Brush
+  simTool: SimTool
+  moveSourceId: string | null
   residentView: ResidentView
   devGoStay: GoStay
   expandedCameraId: string | null
-  worldUpdatedAt: number
   composerFocusNonce: number
 }
 
 export type UiActions = {
   setPerspective: (perspective: Perspective) => void
-  setViewingAs: (personId: string) => void
-  selectPerson: (personId: string | null) => void
-  hoverPerson: (personId: string | null) => void
+  setViewingAs: (civilianId: string) => void
+  selectCivilian: (civilianId: string | null) => void
+  hoverCivilian: (civilianId: string | null) => void
   selectThread: (threadId: string) => void
   toggleOverlay: (kind: OverlayKind) => void
+  setFloor: (floor: FloorFilter) => void
   setSimMode: (on: boolean) => void
-  setBrush: (brush: Brush) => void
+  setSimTool: (tool: SimTool) => void
+  setMoveSource: (civilianId: string | null) => void
   setResidentView: (view: ResidentView) => void
   setDevGoStay: (value: GoStay) => void
   setExpandedCamera: (cameraId: string | null) => void
@@ -35,47 +38,53 @@ export type UiActions = {
 
 export type UiSlice = UiData & UiActions
 
-export function initialUi(now: number, perspective: Perspective = 'firefighter'): UiData {
+export function initialUi(perspective: Perspective = 'firefighter', viewingAsId: string = DEFAULT_RESIDENT_ID): UiData {
   return {
     perspective,
-    viewingAsId: DEFAULT_RESIDENT_ID,
-    selectedPersonId: null,
-    hoveredPersonId: null,
+    viewingAsId,
+    selectedCivilianId: null,
+    hoveredCivilianId: null,
     selectedThreadId: CREW_THREAD_ID,
-    overlays: { fire: true, smoke: true, structural: true },
+    overlays: { fire: true, smoke: true, risk: true },
+    floor: 'all',
     simMode: false,
-    brush: 'fire',
+    simTool: 'fire',
+    moveSourceId: null,
     residentView: 'building',
     devGoStay: 'auto',
     expandedCameraId: null,
-    worldUpdatedAt: now,
     composerFocusNonce: 0,
   }
 }
 
 export const createUiSlice: SliceCreator<UiSlice> = (set, get) => ({
-  ...initialUi(Date.now()),
+  ...initialUi(),
   setPerspective: (perspective) => set({ perspective }),
-  setViewingAs: (viewingAsId) => set({ viewingAsId }),
-  selectPerson: (personId) => {
-    if (personId === null) {
-      set({ selectedPersonId: null })
+  setViewingAs: (viewingAsId) => {
+    set({ viewingAsId })
+    if (get().engineStatus === 'live') void get().refresh()
+  },
+  selectCivilian: (civilianId) => {
+    if (civilianId === null) {
+      set({ selectedCivilianId: null })
       return
     }
-    const threadId = threadIdFor(personId)
-    set({ selectedPersonId: personId, selectedThreadId: threadId })
+    const threadId = threadIdFor(civilianId)
+    set({ selectedCivilianId: civilianId, selectedThreadId: threadId })
     get().markRead(threadId)
   },
-  hoverPerson: (hoveredPersonId) => set({ hoveredPersonId }),
+  hoverCivilian: (hoveredCivilianId) => set({ hoveredCivilianId }),
   selectThread: (threadId) => {
     const thread = get().threads.find((t) => t.id === threadId)
     if (!thread) return
-    set({ selectedThreadId: threadId, selectedPersonId: thread.personId ?? null })
+    set({ selectedThreadId: threadId, selectedCivilianId: thread.personId ?? null })
     get().markRead(threadId)
   },
   toggleOverlay: (kind) => set((s) => ({ overlays: { ...s.overlays, [kind]: !s.overlays[kind] } })),
-  setSimMode: (simMode) => set({ simMode }),
-  setBrush: (brush) => set({ brush }),
+  setFloor: (floor) => set({ floor }),
+  setSimMode: (simMode) => set({ simMode, moveSourceId: null }),
+  setSimTool: (simTool) => set({ simTool, moveSourceId: null }),
+  setMoveSource: (moveSourceId) => set({ moveSourceId }),
   setResidentView: (residentView) => set({ residentView }),
   setDevGoStay: (devGoStay) => set({ devGoStay }),
   setExpandedCamera: (expandedCameraId) => set({ expandedCameraId }),

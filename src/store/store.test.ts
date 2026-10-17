@@ -1,159 +1,235 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { CREW_THREAD_ID, createMockState, threadIdFor } from '../data/mock'
-import { isAtStaging } from '../lib/geometry'
-import { useSentinel, mergePersisted } from './index'
-import { deriveWorld } from './selectors'
+import scenario from '../data/scenario.json'
+import { CAMERAS, CREW_THREAD_ID, seedThreads, threadIdFor } from '../data/scenarioThreads'
+import { FakeEngine } from '../engine/fakeEngine'
+import { ENGINE_FIXTURE } from '../engine/fixture'
+import { setEngineClient } from '../engine/instance'
+import type { Route } from '../engine/types'
+import { emptyEngineData } from './engineSlice'
+import { mergePersisted, useSentinel } from './index'
+import { initialUi } from './uiSlice'
 
 const state = () => useSentinel.getState()
-const thread = (personId: string) => state().threads.find((t) => t.id === threadIdFor(personId))!
-const person = (id: string) => state().world.people.find((p) => p.id === id)!
+const thread = (civilianId: string) => state().threads.find((t) => t.id === threadIdFor(civilianId))!
+const recorded = (id: string) => ENGINE_FIXTURE.state.entities.find((e) => e.entity_id === id)!
 
-beforeEach(() => {
+let engine: FakeEngine
+
+function freshStore(seeded = true) {
   localStorage.clear()
-  state().resetDemo()
-  state().setPerspective('firefighter')
+  engine = new FakeEngine({ seeded })
+  setEngineClient(engine)
+  useSentinel.setState({
+    ...emptyEngineData(),
+    engineStatus: 'connecting',
+    engineError: null,
+    pending: false,
+    threads: seedThreads(Date.now()),
+    ...initialUi(),
+  })
+}
+
+beforeEach(() => freshStore())
+
+describe('connect', () => {
+  it('seeds an empty engine in scenario order and goes live', async () => {
+    freshStore(false)
+    await state().connect()
+    expect(engine.callsTo('reset')).toHaveLength(1)
+    expect(engine.callsTo('report').map((c) => c.args[0])).toEqual(scenario.residents.map((r) => r.text))
+    expect(engine.callsTo('addResponder').map((c) => c.args[0])).toEqual(['UNIT_ALPHA', 'UNIT_BRAVO'])
+    expect(engine.callsTo('ignite').map((c) => c.args[0])).toEqual(['F2_CORRIDOR_EAST'])
+    expect(engine.callsTo('addHazard').map((c) => c.args)).toEqual([['smoke', 'F3_CORRIDOR_CENTER']])
+    expect(engine.callsTo('computeRoute').map((c) => c.args)).toEqual([
+      ['UNIT_ALPHA', ENGINE_FIXTURE.recommendations[0].civilian_id],
+      ['UNIT_BRAVO', ENGINE_FIXTURE.recommendations[1].civilian_id],
+    ])
+    expect(state().engineStatus).toBe('live')
+    expect(state().snapshot?.entities.filter((e) => e.entity_type === 'civilian')).toHaveLength(6)
+  })
+
+  it('does not reseed an engine that already has civilians', async () => {
+    await state().connect()
+    expect(engine.callsTo('reset')).toHaveLength(0)
+    expect(state().engineStatus).toBe('live')
+    expect(Object.keys(state().evacuations)).toHaveLength(6)
+    expect(state().advisories[state().viewingAsId]).toBeDefined()
+  })
+
+  it('seeds once when connect runs twice at the same time (StrictMode)', async () => {
+    freshStore(false)
+    await Promise.all([state().connect(), state().connect()])
+    expect(engine.callsTo('reset')).toHaveLength(1)
+    expect(engine.callsTo('report')).toHaveLength(scenario.residents.length)
+  })
+
+  it('falls back to the recorded incident when the engine is down', async () => {
+    engine.down = true
+    await state().connect()
+    expect(state().engineStatus).toBe('offline')
+    expect(state().engineError).toContain('unreachable')
+    expect(state().snapshot).toBe(ENGINE_FIXTURE.state)
+    expect(state().graph).toBe(ENGINE_FIXTURE.graph)
+  })
+
+  it('keeps live data when the engine drops mid-demo', async () => {
+    await state().connect()
+    const live = state().snapshot
+    engine.down = true
+    await state().poll()
+    expect(state().engineStatus).toBe('offline')
+    expect(state().snapshot).toBe(live)
+  })
 })
 
-describe('quick replies', () => {
-  it('posts the chip and a status event, and raises priority', () => {
-    const unreadBefore = thread('3B').unread
-    state().sendQuickReply('3B', 'trapped')
-    expect(person('3B')).toMatchObject({ status: 'trapped', priority: 'critical' })
-    const last = thread('3B').messages.slice(-2)
-    expect(last[0]).toMatchObject({ from: 'resident', quick: 'trapped', text: "I'm trapped", sender: 'Unit 3B' })
-    expect(last[1]).toMatchObject({ from: 'system', text: 'Status changed to Trapped' })
-    expect(thread('3B').unread).toBe(unreadBefore + 1)
+describe('poll', () => {
+  beforeEach(async () => {
+    await state().connect()
   })
 
-  it('makes the change visible to the firefighter view', () => {
-    state().setPerspective('resident')
-    state().sendQuickReply('3B', 'trapped')
-    state().setPerspective('firefighter')
-    const derived = deriveWorld(state().world)
-    expect(derived.rescueRoutes.map((r) => r.personId)).toContain('3B')
+  it('refreshes only on world-changing events', async () => {
+    const before = engine.callsTo('state').length
+    engine.emit('advisory_drafted')
+    engine.emit('rescue_prioritized')
+    await state().poll()
+    expect(engine.callsTo('state')).toHaveLength(before)
+    engine.emit('hazard_added')
+    await state().poll()
+    expect(engine.callsTo('state')).toHaveLength(before + 1)
   })
 
-  it("moves a resident who is out to staging and drops their route", () => {
-    state().sendQuickReply('3B', 'out')
-    expect(isAtStaging(person('3B').pos)).toBe(true)
-    expect(deriveWorld(state().world).exitRoutes['3B'].points).toHaveLength(0)
+  it('runs one poll at a time', async () => {
+    const before = engine.callsTo('events').length
+    await Promise.all([state().poll(), state().poll()])
+    expect(engine.callsTo('events')).toHaveLength(before + 1)
+  })
+
+  it('posts a route-change message once per real change', async () => {
+    const blocked: Route = { ...ENGINE_FIXTURE.evacuations.CIV_003!, status: 'unreachable' }
+    engine.evacuationOverrides = { CIV_003: blocked }
+    engine.emit('hazard_added')
+    await state().poll()
+    engine.emit('hazard_added')
+    await state().poll()
+    const notices = thread('CIV_003').messages.filter((m) => m.text === 'Route blocked · Shelter in place')
+    expect(notices).toHaveLength(1)
+    expect(notices[0].from).toBe('system')
+  })
+})
+
+describe('engine actions', () => {
+  beforeEach(async () => {
+    await state().connect()
+  })
+
+  it('appends new reports to the civilian’s earlier report', async () => {
+    expect(await state().reportCivilian('CIV_003', "I'm trapped.")).toBe(true)
+    expect(engine.callsTo('report').at(-1)?.args).toEqual([`${recorded('CIV_003').report!.raw_text} I'm trapped.`, 'CIV_003'])
+  })
+
+  it('maps hazard tools to engine calls', async () => {
+    await state().addHazard('fire', 'F3_CORRIDOR_EAST')
+    await state().addHazard('blocked', 'F1_STAIR_A')
+    expect(engine.callsTo('ignite').at(-1)?.args).toEqual(['F3_CORRIDOR_EAST'])
+    expect(engine.callsTo('addHazard').at(-1)?.args).toEqual(['blocked', 'F1_STAIR_A'])
+  })
+
+  it('posts a simulated camera observation at the camera’s node', async () => {
+    await state().simulateDetection(CAMERAS[0])
+    const [obs] = engine.callsTo('observe').at(-1)!.args as [{ graph_node_id: string; type: string; camera_id: string }]
+    expect(obs).toMatchObject({ graph_node_id: CAMERAS[0].nodeId, type: 'smoke', camera_id: CAMERAS[0].id })
+  })
+
+  it('refuses actions while offline', async () => {
+    useSentinel.setState({ engineStatus: 'offline' })
+    const before = engine.calls.length
+    expect(await state().addHazard('smoke', 'F2_CORRIDOR_WEST')).toBe(false)
+    expect(engine.calls).toHaveLength(before)
+    expect(state().engineError).toContain('offline')
   })
 })
 
 describe('messages', () => {
-  it('ignores blank messages and truncates long ones', () => {
-    const before = thread('2D').messages.length
-    state().sendMessage(threadIdFor('2D'), 'responder', '   ')
-    expect(thread('2D').messages).toHaveLength(before)
-    state().sendMessage(threadIdFor('2D'), 'responder', 'x'.repeat(600))
-    const last = thread('2D').messages.at(-1)!
-    expect(last.text).toHaveLength(500)
-    expect(last.sender).toBe('E7 · Reyes')
+  beforeEach(async () => {
+    await state().connect()
   })
 
-  it('shares one thread between perspectives', () => {
+  it('reports resident free text to the engine and keeps it in the shared thread', async () => {
     state().setPerspective('resident')
-    state().sendMessage(threadIdFor('3B'), 'resident', 'We are leaving now')
+    state().sendMessage(threadIdFor('CIV_003'), 'resident', 'The stairs are smoky')
     state().setPerspective('firefighter')
-    expect(thread('3B').messages.at(-1)).toMatchObject({ text: 'We are leaving now', sender: 'Unit 3B' })
+    expect(thread('CIV_003').messages.at(-1)).toMatchObject({ text: 'The stairs are smoky', sender: 'Studio 310', from: 'resident' })
+    await Promise.resolve()
+    expect(engine.callsTo('report').at(-1)?.args[1]).toBe('CIV_003')
   })
 
-  it('clears a thread and still accepts a quick reply afterwards', () => {
-    state().clearThread(threadIdFor('3B'))
-    expect(thread('3B')).toMatchObject({ messages: [], unread: 0 })
-    state().sendQuickReply('3B', 'cant-move')
-    expect(thread('3B').messages).toHaveLength(2)
-    expect(thread('3B').unread).toBe(1)
+  it('does not report responder messages, ignores blanks, truncates long text', () => {
+    const before = engine.callsTo('report').length
+    state().sendMessage(threadIdFor('CIV_002'), 'responder', '   ')
+    state().sendMessage(threadIdFor('CIV_002'), 'responder', 'x'.repeat(600))
+    expect(thread('CIV_002').messages.at(-1)).toMatchObject({ sender: 'E7 · Reyes' })
+    expect(thread('CIV_002').messages.at(-1)?.text).toHaveLength(500)
+    expect(engine.callsTo('report')).toHaveLength(before)
   })
 
-  it('marks a thread read', () => {
-    expect(thread('2D').unread).toBeGreaterThan(0)
-    state().markRead(threadIdFor('2D'))
-    expect(thread('2D').unread).toBe(0)
-  })
-})
-
-describe('world edits', () => {
-  it('posts a route event only when a route actually changes', () => {
-    const count = () => thread('3B').messages.filter((m) => m.from === 'system').length
-    const start = count()
-    state().paintCell(3, 7, 4, 2) // blocks Stair A for 3B; 3B already uses B
-    expect(count()).toBe(start)
-    state().paintCell(3, 14, 4, 2) // blocks Stair B too
-    expect(thread('3B').messages.at(-1)?.text).toBe('Route blocked · Shelter in place')
-    state().paintCell(4, 0, 0, 2) // unrelated cell
-    expect(count()).toBe(start + 1)
-    state().paintCell(3, 14, 4, 0)
-    expect(thread('3B').messages.at(-1)?.text).toBe('Route open · Take Stair B')
+  it("moves a resident who taps I'm out to staging", async () => {
+    state().sendQuickReply('CIV_003', 'out')
+    expect(thread('CIV_003').messages.at(-1)).toMatchObject({ quick: 'out', text: "I'm out" })
+    await Promise.resolve()
+    expect(engine.callsTo('moveCivilian').at(-1)?.args).toEqual(['CIV_003', 'EXT_STAGING'])
   })
 
-  it('treats painting an unchanged cell as a no-op', () => {
-    const world = state().world
-    state().paintCell(1, 0, 0, 0)
-    expect(state().world).toBe(world)
+  it("reports I'm trapped with the triage phrase", async () => {
+    state().sendQuickReply('CIV_005', 'trapped')
+    await Promise.resolve()
+    expect(String(engine.callsTo('report').at(-1)?.args[0])).toMatch(/I'm trapped\.$/)
   })
 
-  it('ignores drops outside the building and accepts hallway drops', () => {
-    const before = person('3B').pos
-    state().movePerson('3B', { floor: 1, x: 1100, y: 150 })
-    expect(person('3B').pos).toEqual(before)
-    state().movePerson('3B', { floor: 3, x: 500, y: 150 })
-    expect(person('3B').pos).toEqual({ floor: 3, x: 500, y: 150 })
-  })
-
-  it('evacuates 2G through simulation steps', () => {
-    for (let i = 0; i < 10; i++) state().stepSim()
-    expect(person('2G').status).toBe('evacuated')
-    expect(thread('2G').messages.at(-1)?.text).toBe('Status changed to Evacuated')
+  it('still accepts a quick reply after the thread is cleared', () => {
+    state().clearThread(threadIdFor('CIV_003'))
+    expect(thread('CIV_003')).toMatchObject({ messages: [], unread: 0 })
+    state().sendQuickReply('CIV_003', 'cant-move')
+    expect(thread('CIV_003').messages).toHaveLength(1)
+    expect(thread('CIV_003').unread).toBe(1)
   })
 })
 
-describe('selection sync', () => {
-  it('selecting a person selects their thread and reads it', () => {
-    state().selectPerson('2D')
-    expect(state().selectedThreadId).toBe(threadIdFor('2D'))
-    expect(thread('2D').unread).toBe(0)
-  })
-
-  it('selecting a thread selects its person; crew clears it', () => {
-    state().selectThread(threadIdFor('2B'))
-    expect(state().selectedPersonId).toBe('2B')
+describe('selection and reset', () => {
+  it('syncs civilian and thread selection', () => {
+    state().selectCivilian('CIV_002')
+    expect(state().selectedThreadId).toBe(threadIdFor('CIV_002'))
+    expect(thread('CIV_002').unread).toBe(0)
     state().selectThread(CREW_THREAD_ID)
-    expect(state().selectedPersonId).toBeNull()
+    expect(state().selectedCivilianId).toBeNull()
+    state().selectThread(threadIdFor('CIV_004'))
+    expect(state().selectedCivilianId).toBe('CIV_004')
   })
-})
 
-describe('reset and persistence', () => {
-  it('resetDemo restores mock data but keeps the perspective', () => {
-    state().sendQuickReply('3B', 'trapped')
+  it('resetDemo reseeds a live engine, restores threads and keeps the perspective', async () => {
+    await state().connect()
+    state().clearThread(threadIdFor('CIV_001'))
     state().setPerspective('resident')
-    state().resetDemo()
-    expect(person('3B').status).toBe('sheltering')
+    await state().resetDemo()
+    expect(engine.callsTo('reset')).toHaveLength(1)
+    expect(thread('CIV_001').messages.length).toBeGreaterThan(0)
     expect(state().perspective).toBe('resident')
   })
 
-  it('falls back to current state when persisted data is corrupt', () => {
+  it('falls back to scenario threads when saved data is corrupt', () => {
     const current = state()
     expect(mergePersisted(null, current)).toBe(current)
-    expect(mergePersisted({ world: { people: 'nope' } }, current)).toBe(current)
-    expect(mergePersisted({ incident: {}, world: {}, threads: [] }, current)).toBe(current)
+    expect(mergePersisted({ threads: 'nope' }, current)).toBe(current)
+    const missingUnread = { threads: [{ id: 'crew', kind: 'crew', messages: [] }], perspective: 'resident', viewingAsId: 'CIV_001' }
+    expect(mergePersisted(missingUnread, current)).toBe(current)
+    const badMessage = { threads: [{ id: 'crew', kind: 'crew', unread: 0, messages: [{ id: 'm', text: 'hi' }] }], perspective: 'resident', viewingAsId: 'CIV_001' }
+    expect(mergePersisted(badMessage, current)).toBe(current)
   })
 
-  it('rejects persisted people or threads from an older shape', () => {
-    const current = state()
-    const clone = () => JSON.parse(JSON.stringify(createMockState(1)))
-    const noMobility = clone()
-    delete noMobility.world.people[0].mobility
-    expect(mergePersisted(noMobility, current)).toBe(current)
-    const noUnread = clone()
-    delete noUnread.threads[0].unread
-    expect(mergePersisted(noUnread, current)).toBe(current)
-  })
-
-  it('uses valid persisted data', () => {
-    const saved = createMockState(123)
+  it('uses valid saved threads and view', () => {
+    const saved = { threads: seedThreads(1), perspective: 'resident', viewingAsId: 'CIV_005' }
     const merged = mergePersisted(JSON.parse(JSON.stringify(saved)), state())
-    expect(merged.incident.startedAt).toBe(saved.incident.startedAt)
-    expect(merged.world.people).toHaveLength(8)
+    expect(merged.perspective).toBe('resident')
+    expect(merged.viewingAsId).toBe('CIV_005')
+    expect(merged.threads).toHaveLength(7)
   })
 })

@@ -1,4 +1,4 @@
-import type { Point } from '../types'
+import type { WorldPosition } from '../engine/types'
 
 const pad = (n: number) => String(n).padStart(2, '0')
 
@@ -29,8 +29,8 @@ export function formatEta(s: number): string {
   return `${Math.floor(t / 60)}:${pad(t % 60)}`
 }
 
-export function formatCoords(p: Point): string {
-  return `F${p.floor} · ${Math.round(p.x)}, ${Math.round(p.y)}`
+export function formatCoords(p: WorldPosition): string {
+  return `${p.floor_id} · ${p.x.toFixed(1)}, ${p.y.toFixed(1)} m`
 }
 
 const EMPHASIS = /(\b[A-Z]{2,}(?: [A-Z]\b)?)/
