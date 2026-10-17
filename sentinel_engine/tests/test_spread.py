@@ -29,7 +29,7 @@ def test_mc_risk_decreases_with_distance(building):
     mc = MonteCarloPredictor(building)
     risk = mc.predict({"F2_CORRIDOR_EAST"}, horizon_minutes=5, n_rollouts=200, seed=0)
     assert risk["F2_CORRIDOR_EAST"] == 1.0
-    assert risk["F2_CORRIDOR_CENTER"] > risk["B_MAKERSPACE"]
+    assert risk["F2_CORRIDOR_CENTER"] > risk["B_STUDIO_10"]
 
 
 def test_mc_deterministic_for_seed(building):

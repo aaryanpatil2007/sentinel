@@ -3,7 +3,7 @@
   "coordinate_frame": "JACOBS_LOCAL",
   "origin_description": "Illustrative southwest ground-floor corner; x east, y north, z up, meters.",
   "provenance": "simulated",
-  "source_note": "Floor count and room naming style informed by the public Jacobs Institute space descriptions; all coordinates and connections are illustrative.",
+  "source_note": "Verified from public sources: 3 stories + basement, two main F1 entrances, room names (Studios 10/110/120/210/220/310, Metal Shop, Advanced Prototyping Lab) per the official Jacobs Institute spaces page; ~41m x ~24m footprint on an east-west axis per OpenStreetMap (way 440146220, 2530 Ridge Rd). All coordinates, corridor layout, and stair/entrance placement are illustrative.",
   "floors": [
     {
       "floor_id": "B",
@@ -82,19 +82,19 @@
       "z": -4.0
     },
     {
-      "node_id": "B_MAKERSPACE",
+      "node_id": "B_STUDIO_10",
       "floor_id": "B",
       "node_type": "room",
-      "label": "Basement Makerspace",
+      "label": "Studio 10",
       "x": 12.0,
       "y": 16.0,
       "z": -4.0
     },
     {
-      "node_id": "B_WOODSHOP",
+      "node_id": "B_METAL_SHOP",
       "floor_id": "B",
       "node_type": "room",
-      "label": "Wood Shop",
+      "label": "Metal Shop",
       "x": 28.0,
       "y": 16.0,
       "z": -4.0
@@ -154,19 +154,19 @@
       "z": 0.0
     },
     {
-      "node_id": "F1_DESIGN_SHOWCASE",
+      "node_id": "F1_STUDIO_110",
       "floor_id": "F1",
       "node_type": "room",
-      "label": "Design Showcase",
+      "label": "Studio 110",
       "x": 12.0,
       "y": 16.0,
       "z": 0.0
     },
     {
-      "node_id": "F1_ELECTRONICS_LAB",
+      "node_id": "F1_STUDIO_120",
       "floor_id": "F1",
       "node_type": "room",
-      "label": "Electronics Lab",
+      "label": "Studio 120",
       "x": 28.0,
       "y": 16.0,
       "z": 0.0
@@ -307,10 +307,10 @@
       "z": 8.0
     },
     {
-      "node_id": "F3_STUDIO_320",
+      "node_id": "F3_PROTOTYPING_LAB",
       "floor_id": "F3",
       "node_type": "room",
-      "label": "Studio 320",
+      "label": "Advanced Prototyping Lab",
       "x": 28.0,
       "y": 16.0,
       "z": 8.0
@@ -381,14 +381,14 @@
     },
     {
       "edge_id": "E005",
-      "from_node": "B_MAKERSPACE",
+      "from_node": "B_STUDIO_10",
       "to_node": "B_CORRIDOR_WEST",
       "distance_m": 6.0,
       "edge_type": "doorway"
     },
     {
       "edge_id": "E006",
-      "from_node": "B_WOODSHOP",
+      "from_node": "B_METAL_SHOP",
       "to_node": "B_CORRIDOR_EAST",
       "distance_m": 6.0,
       "edge_type": "doorway"
@@ -430,14 +430,14 @@
     },
     {
       "edge_id": "E012",
-      "from_node": "F1_DESIGN_SHOWCASE",
+      "from_node": "F1_STUDIO_110",
       "to_node": "F1_CORRIDOR_WEST",
       "distance_m": 6.0,
       "edge_type": "doorway"
     },
     {
       "edge_id": "E013",
-      "from_node": "F1_ELECTRONICS_LAB",
+      "from_node": "F1_STUDIO_120",
       "to_node": "F1_CORRIDOR_EAST",
       "distance_m": 6.0,
       "edge_type": "doorway"
@@ -535,7 +535,7 @@
     },
     {
       "edge_id": "E027",
-      "from_node": "F3_STUDIO_320",
+      "from_node": "F3_PROTOTYPING_LAB",
       "to_node": "F3_CORRIDOR_EAST",
       "distance_m": 6.0,
       "edge_type": "doorway"
