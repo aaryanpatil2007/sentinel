@@ -1,0 +1,2616 @@
+{
+ "graph": {
+  "nodes": [
+   {
+    "node_id": "B_STAIR_A",
+    "floor_id": "B",
+    "node_type": "stairs",
+    "label": "West Stairwell (B)",
+    "x": 5.0,
+    "y": 10.0,
+    "z": -4.0
+   },
+   {
+    "node_id": "B_STAIR_B",
+    "floor_id": "B",
+    "node_type": "stairs",
+    "label": "East Stairwell (B)",
+    "x": 35.0,
+    "y": 10.0,
+    "z": -4.0
+   },
+   {
+    "node_id": "B_ELEVATOR",
+    "floor_id": "B",
+    "node_type": "elevator",
+    "label": "Elevator (B)",
+    "x": 20.0,
+    "y": 12.0,
+    "z": -4.0
+   },
+   {
+    "node_id": "B_CORRIDOR_WEST",
+    "floor_id": "B",
+    "node_type": "corridor",
+    "label": "West Corridor (B)",
+    "x": 12.0,
+    "y": 10.0,
+    "z": -4.0
+   },
+   {
+    "node_id": "B_CORRIDOR_CENTER",
+    "floor_id": "B",
+    "node_type": "corridor",
+    "label": "Center Corridor (B)",
+    "x": 20.0,
+    "y": 10.0,
+    "z": -4.0
+   },
+   {
+    "node_id": "B_CORRIDOR_EAST",
+    "floor_id": "B",
+    "node_type": "corridor",
+    "label": "East Corridor (B)",
+    "x": 28.0,
+    "y": 10.0,
+    "z": -4.0
+   },
+   {
+    "node_id": "B_STUDIO_10",
+    "floor_id": "B",
+    "node_type": "room",
+    "label": "Studio 10",
+    "x": 12.0,
+    "y": 16.0,
+    "z": -4.0
+   },
+   {
+    "node_id": "B_METAL_SHOP",
+    "floor_id": "B",
+    "node_type": "room",
+    "label": "Metal Shop",
+    "x": 28.0,
+    "y": 16.0,
+    "z": -4.0
+   },
+   {
+    "node_id": "F1_STAIR_A",
+    "floor_id": "F1",
+    "node_type": "stairs",
+    "label": "West Stairwell (F1)",
+    "x": 5.0,
+    "y": 10.0,
+    "z": 0.0
+   },
+   {
+    "node_id": "F1_STAIR_B",
+    "floor_id": "F1",
+    "node_type": "stairs",
+    "label": "East Stairwell (F1)",
+    "x": 35.0,
+    "y": 10.0,
+    "z": 0.0
+   },
+   {
+    "node_id": "F1_ELEVATOR",
+    "floor_id": "F1",
+    "node_type": "elevator",
+    "label": "Elevator (F1)",
+    "x": 20.0,
+    "y": 12.0,
+    "z": 0.0
+   },
+   {
+    "node_id": "F1_CORRIDOR_WEST",
+    "floor_id": "F1",
+    "node_type": "corridor",
+    "label": "West Corridor (F1)",
+    "x": 12.0,
+    "y": 10.0,
+    "z": 0.0
+   },
+   {
+    "node_id": "F1_CORRIDOR_CENTER",
+    "floor_id": "F1",
+    "node_type": "corridor",
+    "label": "Center Corridor (F1)",
+    "x": 20.0,
+    "y": 10.0,
+    "z": 0.0
+   },
+   {
+    "node_id": "F1_CORRIDOR_EAST",
+    "floor_id": "F1",
+    "node_type": "corridor",
+    "label": "East Corridor (F1)",
+    "x": 28.0,
+    "y": 10.0,
+    "z": 0.0
+   },
+   {
+    "node_id": "F1_STUDIO_110",
+    "floor_id": "F1",
+    "node_type": "room",
+    "label": "Studio 110",
+    "x": 12.0,
+    "y": 16.0,
+    "z": 0.0
+   },
+   {
+    "node_id": "F1_STUDIO_120",
+    "floor_id": "F1",
+    "node_type": "room",
+    "label": "Studio 120",
+    "x": 28.0,
+    "y": 16.0,
+    "z": 0.0
+   },
+   {
+    "node_id": "F2_STAIR_A",
+    "floor_id": "F2",
+    "node_type": "stairs",
+    "label": "West Stairwell (F2)",
+    "x": 5.0,
+    "y": 10.0,
+    "z": 4.0
+   },
+   {
+    "node_id": "F2_STAIR_B",
+    "floor_id": "F2",
+    "node_type": "stairs",
+    "label": "East Stairwell (F2)",
+    "x": 35.0,
+    "y": 10.0,
+    "z": 4.0
+   },
+   {
+    "node_id": "F2_ELEVATOR",
+    "floor_id": "F2",
+    "node_type": "elevator",
+    "label": "Elevator (F2)",
+    "x": 20.0,
+    "y": 12.0,
+    "z": 4.0
+   },
+   {
+    "node_id": "F2_CORRIDOR_WEST",
+    "floor_id": "F2",
+    "node_type": "corridor",
+    "label": "West Corridor (F2)",
+    "x": 12.0,
+    "y": 10.0,
+    "z": 4.0
+   },
+   {
+    "node_id": "F2_CORRIDOR_CENTER",
+    "floor_id": "F2",
+    "node_type": "corridor",
+    "label": "Center Corridor (F2)",
+    "x": 20.0,
+    "y": 10.0,
+    "z": 4.0
+   },
+   {
+    "node_id": "F2_CORRIDOR_EAST",
+    "floor_id": "F2",
+    "node_type": "corridor",
+    "label": "East Corridor (F2)",
+    "x": 28.0,
+    "y": 10.0,
+    "z": 4.0
+   },
+   {
+    "node_id": "F2_STUDIO_210",
+    "floor_id": "F2",
+    "node_type": "room",
+    "label": "Studio 210",
+    "x": 12.0,
+    "y": 16.0,
+    "z": 4.0
+   },
+   {
+    "node_id": "F2_STUDIO_220",
+    "floor_id": "F2",
+    "node_type": "room",
+    "label": "Studio 220",
+    "x": 28.0,
+    "y": 16.0,
+    "z": 4.0
+   },
+   {
+    "node_id": "F3_STAIR_A",
+    "floor_id": "F3",
+    "node_type": "stairs",
+    "label": "West Stairwell (F3)",
+    "x": 5.0,
+    "y": 10.0,
+    "z": 8.0
+   },
+   {
+    "node_id": "F3_STAIR_B",
+    "floor_id": "F3",
+    "node_type": "stairs",
+    "label": "East Stairwell (F3)",
+    "x": 35.0,
+    "y": 10.0,
+    "z": 8.0
+   },
+   {
+    "node_id": "F3_ELEVATOR",
+    "floor_id": "F3",
+    "node_type": "elevator",
+    "label": "Elevator (F3)",
+    "x": 20.0,
+    "y": 12.0,
+    "z": 8.0
+   },
+   {
+    "node_id": "F3_CORRIDOR_WEST",
+    "floor_id": "F3",
+    "node_type": "corridor",
+    "label": "West Corridor (F3)",
+    "x": 12.0,
+    "y": 10.0,
+    "z": 8.0
+   },
+   {
+    "node_id": "F3_CORRIDOR_CENTER",
+    "floor_id": "F3",
+    "node_type": "corridor",
+    "label": "Center Corridor (F3)",
+    "x": 20.0,
+    "y": 10.0,
+    "z": 8.0
+   },
+   {
+    "node_id": "F3_CORRIDOR_EAST",
+    "floor_id": "F3",
+    "node_type": "corridor",
+    "label": "East Corridor (F3)",
+    "x": 28.0,
+    "y": 10.0,
+    "z": 8.0
+   },
+   {
+    "node_id": "F3_STUDIO_310",
+    "floor_id": "F3",
+    "node_type": "room",
+    "label": "Studio 310",
+    "x": 12.0,
+    "y": 16.0,
+    "z": 8.0
+   },
+   {
+    "node_id": "F3_PROTOTYPING_LAB",
+    "floor_id": "F3",
+    "node_type": "room",
+    "label": "Advanced Prototyping Lab",
+    "x": 28.0,
+    "y": 16.0,
+    "z": 8.0
+   },
+   {
+    "node_id": "F1_ENTRANCE_MAIN",
+    "floor_id": "F1",
+    "node_type": "entrance",
+    "label": "Main Entrance",
+    "x": 20.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   {
+    "node_id": "F1_ENTRANCE_EAST",
+    "floor_id": "F1",
+    "node_type": "entrance",
+    "label": "East Entrance",
+    "x": 35.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   {
+    "node_id": "EXT_STAGING",
+    "floor_id": "F1",
+    "node_type": "staging",
+    "label": "Exterior Staging Area",
+    "x": 20.0,
+    "y": -10.0,
+    "z": 0.0
+   }
+  ],
+  "edges": [
+   {
+    "edge_id": "E000",
+    "from_node": "B_CORRIDOR_WEST",
+    "to_node": "B_CORRIDOR_CENTER",
+    "distance_m": 8.0,
+    "edge_type": "corridor"
+   },
+   {
+    "edge_id": "E001",
+    "from_node": "B_CORRIDOR_CENTER",
+    "to_node": "B_CORRIDOR_EAST",
+    "distance_m": 8.0,
+    "edge_type": "corridor"
+   },
+   {
+    "edge_id": "E002",
+    "from_node": "B_STAIR_A",
+    "to_node": "B_CORRIDOR_WEST",
+    "distance_m": 7.0,
+    "edge_type": "doorway"
+   },
+   {
+    "edge_id": "E003",
+    "from_node": "B_STAIR_B",
+    "to_node": "B_CORRIDOR_EAST",
+    "distance_m": 7.0,
+    "edge_type": "doorway"
+   },
+   {
+    "edge_id": "E004",
+    "from_node": "B_ELEVATOR",
+    "to_node": "B_CORRIDOR_CENTER",
+    "distance_m": 2.0,
+    "edge_type": "doorway"
+   },
+   {
+    "edge_id": "E005",
+    "from_node": "B_STUDIO_10",
+    "to_node": "B_CORRIDOR_WEST",
+    "distance_m": 6.0,
+    "edge_type": "doorway"
+   },
+   {
+    "edge_id": "E006",
+    "from_node": "B_METAL_SHOP",
+    "to_node": "B_CORRIDOR_EAST",
+    "distance_m": 6.0,
+    "edge_type": "doorway"
+   },
+   {
+    "edge_id": "E007",
+    "from_node": "F1_CORRIDOR_WEST",
+    "to_node": "F1_CORRIDOR_CENTER",
+    "distance_m": 8.0,
+    "edge_type": "corridor"
+   },
+   {
+    "edge_id": "E008",
+    "from_node": "F1_CORRIDOR_CENTER",
+    "to_node": "F1_CORRIDOR_EAST",
+    "distance_m": 8.0,
+    "edge_type": "corridor"
+   },
+   {
+    "edge_id": "E009",
+    "from_node": "F1_STAIR_A",
+    "to_node": "F1_CORRIDOR_WEST",
+    "distance_m": 7.0,
+    "edge_type": "doorway"
+   },
+   {
+    "edge_id": "E010",
+    "from_node": "F1_STAIR_B",
+    "to_node": "F1_CORRIDOR_EAST",
+    "distance_m": 7.0,
+    "edge_type": "doorway"
+   },
+   {
+    "edge_id": "E011",
+    "from_node": "F1_ELEVATOR",
+    "to_node": "F1_CORRIDOR_CENTER",
+    "distance_m": 2.0,
+    "edge_type": "doorway"
+   },
+   {
+    "edge_id": "E012",
+    "from_node": "F1_STUDIO_110",
+    "to_node": "F1_CORRIDOR_WEST",
+    "distance_m": 6.0,
+    "edge_type": "doorway"
+   },
+   {
+    "edge_id": "E013",
+    "from_node": "F1_STUDIO_120",
+    "to_node": "F1_CORRIDOR_EAST",
+    "distance_m": 6.0,
+    "edge_type": "doorway"
+   },
+   {
+    "edge_id": "E014",
+    "from_node": "F2_CORRIDOR_WEST",
+    "to_node": "F2_CORRIDOR_CENTER",
+    "distance_m": 8.0,
+    "edge_type": "corridor"
+   },
+   {
+    "edge_id": "E015",
+    "from_node": "F2_CORRIDOR_CENTER",
+    "to_node": "F2_CORRIDOR_EAST",
+    "distance_m": 8.0,
+    "edge_type": "corridor"
+   },
+   {
+    "edge_id": "E016",
+    "from_node": "F2_STAIR_A",
+    "to_node": "F2_CORRIDOR_WEST",
+    "distance_m": 7.0,
+    "edge_type": "doorway"
+   },
+   {
+    "edge_id": "E017",
+    "from_node": "F2_STAIR_B",
+    "to_node": "F2_CORRIDOR_EAST",
+    "distance_m": 7.0,
+    "edge_type": "doorway"
+   },
+   {
+    "edge_id": "E018",
+    "from_node": "F2_ELEVATOR",
+    "to_node": "F2_CORRIDOR_CENTER",
+    "distance_m": 2.0,
+    "edge_type": "doorway"
+   },
+   {
+    "edge_id": "E019",
+    "from_node": "F2_STUDIO_210",
+    "to_node": "F2_CORRIDOR_WEST",
+    "distance_m": 6.0,
+    "edge_type": "doorway"
+   },
+   {
+    "edge_id": "E020",
+    "from_node": "F2_STUDIO_220",
+    "to_node": "F2_CORRIDOR_EAST",
+    "distance_m": 6.0,
+    "edge_type": "doorway"
+   },
+   {
+    "edge_id": "E021",
+    "from_node": "F3_CORRIDOR_WEST",
+    "to_node": "F3_CORRIDOR_CENTER",
+    "distance_m": 8.0,
+    "edge_type": "corridor"
+   },
+   {
+    "edge_id": "E022",
+    "from_node": "F3_CORRIDOR_CENTER",
+    "to_node": "F3_CORRIDOR_EAST",
+    "distance_m": 8.0,
+    "edge_type": "corridor"
+   },
+   {
+    "edge_id": "E023",
+    "from_node": "F3_STAIR_A",
+    "to_node": "F3_CORRIDOR_WEST",
+    "distance_m": 7.0,
+    "edge_type": "doorway"
+   },
+   {
+    "edge_id": "E024",
+    "from_node": "F3_STAIR_B",
+    "to_node": "F3_CORRIDOR_EAST",
+    "distance_m": 7.0,
+    "edge_type": "doorway"
+   },
+   {
+    "edge_id": "E025",
+    "from_node": "F3_ELEVATOR",
+    "to_node": "F3_CORRIDOR_CENTER",
+    "distance_m": 2.0,
+    "edge_type": "doorway"
+   },
+   {
+    "edge_id": "E026",
+    "from_node": "F3_STUDIO_310",
+    "to_node": "F3_CORRIDOR_WEST",
+    "distance_m": 6.0,
+    "edge_type": "doorway"
+   },
+   {
+    "edge_id": "E027",
+    "from_node": "F3_PROTOTYPING_LAB",
+    "to_node": "F3_CORRIDOR_EAST",
+    "distance_m": 6.0,
+    "edge_type": "doorway"
+   },
+   {
+    "edge_id": "E028",
+    "from_node": "B_STAIR_A",
+    "to_node": "F1_STAIR_A",
+    "distance_m": 4.0,
+    "edge_type": "stairs"
+   },
+   {
+    "edge_id": "E029",
+    "from_node": "B_STAIR_B",
+    "to_node": "F1_STAIR_B",
+    "distance_m": 4.0,
+    "edge_type": "stairs"
+   },
+   {
+    "edge_id": "E030",
+    "from_node": "B_ELEVATOR",
+    "to_node": "F1_ELEVATOR",
+    "distance_m": 4.0,
+    "edge_type": "elevator"
+   },
+   {
+    "edge_id": "E031",
+    "from_node": "F1_STAIR_A",
+    "to_node": "F2_STAIR_A",
+    "distance_m": 4.0,
+    "edge_type": "stairs"
+   },
+   {
+    "edge_id": "E032",
+    "from_node": "F1_STAIR_B",
+    "to_node": "F2_STAIR_B",
+    "distance_m": 4.0,
+    "edge_type": "stairs"
+   },
+   {
+    "edge_id": "E033",
+    "from_node": "F1_ELEVATOR",
+    "to_node": "F2_ELEVATOR",
+    "distance_m": 4.0,
+    "edge_type": "elevator"
+   },
+   {
+    "edge_id": "E034",
+    "from_node": "F2_STAIR_A",
+    "to_node": "F3_STAIR_A",
+    "distance_m": 4.0,
+    "edge_type": "stairs"
+   },
+   {
+    "edge_id": "E035",
+    "from_node": "F2_STAIR_B",
+    "to_node": "F3_STAIR_B",
+    "distance_m": 4.0,
+    "edge_type": "stairs"
+   },
+   {
+    "edge_id": "E036",
+    "from_node": "F2_ELEVATOR",
+    "to_node": "F3_ELEVATOR",
+    "distance_m": 4.0,
+    "edge_type": "elevator"
+   },
+   {
+    "edge_id": "E037",
+    "from_node": "F1_ENTRANCE_MAIN",
+    "to_node": "F1_CORRIDOR_CENTER",
+    "distance_m": 10.0,
+    "edge_type": "exterior_door"
+   },
+   {
+    "edge_id": "E038",
+    "from_node": "F1_ENTRANCE_EAST",
+    "to_node": "F1_CORRIDOR_EAST",
+    "distance_m": 12.2,
+    "edge_type": "exterior_door"
+   },
+   {
+    "edge_id": "E039",
+    "from_node": "EXT_STAGING",
+    "to_node": "F1_ENTRANCE_MAIN",
+    "distance_m": 10.0,
+    "edge_type": "exterior_door"
+   }
+  ]
+ },
+ "prediction": {
+  "fire_nodes": [
+   "F2_CORRIDOR_EAST"
+  ],
+  "horizon_minutes": 10,
+  "method": "surrogate_ml_simulated",
+  "risk": {
+   "B_STAIR_A": 0.1721,
+   "B_STAIR_B": 0.3172,
+   "B_ELEVATOR": 0.2301,
+   "B_CORRIDOR_WEST": 0.0835,
+   "B_CORRIDOR_CENTER": 0.1832,
+   "B_CORRIDOR_EAST": 0.2691,
+   "B_STUDIO_10": 0.023,
+   "B_METAL_SHOP": 0.1401,
+   "F1_STAIR_A": 0.2865,
+   "F1_STAIR_B": 0.5188,
+   "F1_ELEVATOR": 0.3429,
+   "F1_CORRIDOR_WEST": 0.1934,
+   "F1_CORRIDOR_CENTER": 0.2865,
+   "F1_CORRIDOR_EAST": 0.4266,
+   "F1_STUDIO_110": 0.0787,
+   "F1_STUDIO_120": 0.2268,
+   "F2_STAIR_A": 0.8694,
+   "F2_STAIR_B": 0.9567,
+   "F2_ELEVATOR": 0.921,
+   "F2_CORRIDOR_WEST": 0.9916,
+   "F2_CORRIDOR_CENTER": 0.9894,
+   "F2_CORRIDOR_EAST": 1.0,
+   "F2_STUDIO_210": 0.8556,
+   "F2_STUDIO_220": 0.9594,
+   "F3_STAIR_A": 0.268,
+   "F3_STAIR_B": 0.4963,
+   "F3_ELEVATOR": 0.301,
+   "F3_CORRIDOR_WEST": 0.1934,
+   "F3_CORRIDOR_CENTER": 0.2865,
+   "F3_CORRIDOR_EAST": 0.4266,
+   "F3_STUDIO_310": 0.0787,
+   "F3_PROTOTYPING_LAB": 0.2268,
+   "F1_ENTRANCE_MAIN": 0.1732,
+   "F1_ENTRANCE_EAST": 0.2233,
+   "EXT_STAGING": 0.0787
+  },
+  "provenance": "simulated"
+ },
+ "recommendations": [
+  {
+   "civilian_id": "CIV_001",
+   "priority": "urgent_review",
+   "score": 6,
+   "reason": "occupant reports smoke nearby; occupant or companion cannot self-evacuate; 2 people reported together",
+   "flags": [],
+   "nearest_responder_id": "UNIT_ALPHA",
+   "route_status": "candidate",
+   "estimated_cost": 254.1,
+   "requires_command_approval": true
+  },
+  {
+   "civilian_id": "CIV_002",
+   "priority": "urgent_review",
+   "score": 6,
+   "reason": "occupant reports fire nearby; occupant reports blocked egress; 3 people reported together",
+   "flags": [],
+   "nearest_responder_id": "UNIT_ALPHA",
+   "route_status": "candidate",
+   "estimated_cost": 192.4,
+   "requires_command_approval": true
+  },
+  {
+   "civilian_id": "CIV_004",
+   "priority": "priority_review",
+   "score": 3,
+   "reason": "occupant reports blocked egress; 2 people reported together",
+   "flags": [],
+   "nearest_responder_id": "UNIT_ALPHA",
+   "route_status": "candidate",
+   "estimated_cost": 258.6,
+   "requires_command_approval": true
+  },
+  {
+   "civilian_id": "CIV_006",
+   "priority": "priority_review",
+   "score": 3,
+   "reason": "occupant or companion cannot self-evacuate",
+   "flags": [],
+   "nearest_responder_id": "UNIT_ALPHA",
+   "route_status": "candidate",
+   "estimated_cost": 118.6,
+   "requires_command_approval": true
+  },
+  {
+   "civilian_id": "CIV_003",
+   "priority": "standard_review",
+   "score": 2,
+   "reason": "occupant reports smoke nearby",
+   "flags": [],
+   "nearest_responder_id": "UNIT_ALPHA",
+   "route_status": "candidate",
+   "estimated_cost": 207.1,
+   "requires_command_approval": true
+  },
+  {
+   "civilian_id": "CIV_005",
+   "priority": "standard_review",
+   "score": 2,
+   "reason": "occupant reports smoke nearby",
+   "flags": [],
+   "nearest_responder_id": "UNIT_ALPHA",
+   "route_status": "candidate",
+   "estimated_cost": 98.4,
+   "requires_command_approval": true
+  }
+ ],
+ "evacuations": {
+  "CIV_001": {
+   "route_id": "EVAC_CIV_001",
+   "status": "candidate",
+   "start_node": "F2_STUDIO_210",
+   "destination_node": "F1_ENTRANCE_MAIN",
+   "nodes": [
+    "F2_STUDIO_210",
+    "F2_CORRIDOR_WEST",
+    "F2_STAIR_A",
+    "F1_STAIR_A",
+    "F1_CORRIDOR_WEST",
+    "F1_CORRIDOR_CENTER",
+    "F1_ENTRANCE_MAIN"
+   ],
+   "edge_ids": [
+    "E019",
+    "E016",
+    "E031",
+    "E009",
+    "E007",
+    "E037"
+   ],
+   "polyline": [
+    {
+     "x": 12.0,
+     "y": 16.0,
+     "z": 4.0,
+     "floor_id": "F2",
+     "coordinate_frame": "JACOBS_LOCAL"
+    },
+    {
+     "x": 12.0,
+     "y": 10.0,
+     "z": 4.0,
+     "floor_id": "F2",
+     "coordinate_frame": "JACOBS_LOCAL"
+    },
+    {
+     "x": 5.0,
+     "y": 10.0,
+     "z": 4.0,
+     "floor_id": "F2",
+     "coordinate_frame": "JACOBS_LOCAL"
+    },
+    {
+     "x": 5.0,
+     "y": 10.0,
+     "z": 0.0,
+     "floor_id": "F1",
+     "coordinate_frame": "JACOBS_LOCAL"
+    },
+    {
+     "x": 12.0,
+     "y": 10.0,
+     "z": 0.0,
+     "floor_id": "F1",
+     "coordinate_frame": "JACOBS_LOCAL"
+    },
+    {
+     "x": 20.0,
+     "y": 10.0,
+     "z": 0.0,
+     "floor_id": "F1",
+     "coordinate_frame": "JACOBS_LOCAL"
+    },
+    {
+     "x": 20.0,
+     "y": 0.0,
+     "z": 0.0,
+     "floor_id": "F1",
+     "coordinate_frame": "JACOBS_LOCAL"
+    }
+   ],
+   "steps": [
+    {
+     "instruction": "Proceed 6 m to West Corridor (F2)",
+     "to_node": "F2_CORRIDOR_WEST",
+     "waypoint": {
+      "x": 12.0,
+      "y": 10.0,
+      "z": 4.0,
+      "floor_id": "F2",
+      "coordinate_frame": "JACOBS_LOCAL"
+     },
+     "distance_m": 6.0,
+     "bearing_degrees": 180.0
+    },
+    {
+     "instruction": "Proceed 7 m to West Stairwell (F2)",
+     "to_node": "F2_STAIR_A",
+     "waypoint": {
+      "x": 5.0,
+      "y": 10.0,
+      "z": 4.0,
+      "floor_id": "F2",
+      "coordinate_frame": "JACOBS_LOCAL"
+     },
+     "distance_m": 7.0,
+     "bearing_degrees": 270.0
+    },
+    {
+     "instruction": "Take stairs down to West Stairwell (F1)",
+     "to_node": "F1_STAIR_A",
+     "waypoint": {
+      "x": 5.0,
+      "y": 10.0,
+      "z": 0.0,
+      "floor_id": "F1",
+      "coordinate_frame": "JACOBS_LOCAL"
+     },
+     "distance_m": 4.0,
+     "bearing_degrees": 0.0
+    },
+    {
+     "instruction": "Proceed 7 m to West Corridor (F1)",
+     "to_node": "F1_CORRIDOR_WEST",
+     "waypoint": {
+      "x": 12.0,
+      "y": 10.0,
+      "z": 0.0,
+      "floor_id": "F1",
+      "coordinate_frame": "JACOBS_LOCAL"
+     },
+     "distance_m": 7.0,
+     "bearing_degrees": 90.0
+    },
+    {
+     "instruction": "Proceed 8 m to Center Corridor (F1)",
+     "to_node": "F1_CORRIDOR_CENTER",
+     "waypoint": {
+      "x": 20.0,
+      "y": 10.0,
+      "z": 0.0,
+      "floor_id": "F1",
+      "coordinate_frame": "JACOBS_LOCAL"
+     },
+     "distance_m": 8.0,
+     "bearing_degrees": 90.0
+    },
+    {
+     "instruction": "Proceed 10 m to Main Entrance",
+     "to_node": "F1_ENTRANCE_MAIN",
+     "waypoint": {
+      "x": 20.0,
+      "y": 0.0,
+      "z": 0.0,
+      "floor_id": "F1",
+      "coordinate_frame": "JACOBS_LOCAL"
+     },
+     "distance_m": 10.0,
+     "bearing_degrees": 180.0
+    }
+   ],
+   "total_distance_m": 42.0,
+   "total_cost": 230.2,
+   "hazards_considered": [
+    "HAZ_001",
+    "HAZ_002"
+   ],
+   "assumptions": [
+    "Illustrative simulated building geometry",
+    "Graph cost is not a safety guarantee; command approval required"
+   ],
+   "requires_command_approval": true,
+   "unreachable_reason": null,
+   "alternate": null
+  },
+  "CIV_002": {
+   "route_id": "EVAC_CIV_002",
+   "status": "candidate",
+   "start_node": "B_METAL_SHOP",
+   "destination_node": "F1_ENTRANCE_EAST",
+   "nodes": [
+    "B_METAL_SHOP",
+    "B_CORRIDOR_EAST",
+    "B_STAIR_B",
+    "F1_STAIR_B",
+    "F1_CORRIDOR_EAST",
+    "F1_ENTRANCE_EAST"
+   ],
+   "edge_ids": [
+    "E006",
+    "E003",
+    "E029",
+    "E010",
+    "E038"
+   ],
+   "polyline": [
+    {
+     "x": 28.0,
+     "y": 16.0,
+     "z": -4.0,
+     "floor_id": "B",
+     "coordinate_frame": "JACOBS_LOCAL"
+    },
+    {
+     "x": 28.0,
+     "y": 10.0,
+     "z": -4.0,
+     "floor_id": "B",
+     "coordinate_frame": "JACOBS_LOCAL"
+    },
+    {
+     "x": 35.0,
+     "y": 10.0,
+     "z": -4.0,
+     "floor_id": "B",
+     "coordinate_frame": "JACOBS_LOCAL"
+    },
+    {
+     "x": 35.0,
+     "y": 10.0,
+     "z": 0.0,
+     "floor_id": "F1",
+     "coordinate_frame": "JACOBS_LOCAL"
+    },
+    {
+     "x": 28.0,
+     "y": 10.0,
+     "z": 0.0,
+     "floor_id": "F1",
+     "coordinate_frame": "JACOBS_LOCAL"
+    },
+    {
+     "x": 35.0,
+     "y": 0.0,
+     "z": 0.0,
+     "floor_id": "F1",
+     "coordinate_frame": "JACOBS_LOCAL"
+    }
+   ],
+   "steps": [
+    {
+     "instruction": "Proceed 6 m to East Corridor (B)",
+     "to_node": "B_CORRIDOR_EAST",
+     "waypoint": {
+      "x": 28.0,
+      "y": 10.0,
+      "z": -4.0,
+      "floor_id": "B",
+      "coordinate_frame": "JACOBS_LOCAL"
+     },
+     "distance_m": 6.0,
+     "bearing_degrees": 180.0
+    },
+    {
+     "instruction": "Proceed 7 m to East Stairwell (B)",
+     "to_node": "B_STAIR_B",
+     "waypoint": {
+      "x": 35.0,
+      "y": 10.0,
+      "z": -4.0,
+      "floor_id": "B",
+      "coordinate_frame": "JACOBS_LOCAL"
+     },
+     "distance_m": 7.0,
+     "bearing_degrees": 90.0
+    },
+    {
+     "instruction": "Take stairs up to East Stairwell (F1)",
+     "to_node": "F1_STAIR_B",
+     "waypoint": {
+      "x": 35.0,
+      "y": 10.0,
+      "z": 0.0,
+      "floor_id": "F1",
+      "coordinate_frame": "JACOBS_LOCAL"
+     },
+     "distance_m": 4.0,
+     "bearing_degrees": 0.0
+    },
+    {
+     "instruction": "Proceed 7 m to East Corridor (F1)",
+     "to_node": "F1_CORRIDOR_EAST",
+     "waypoint": {
+      "x": 28.0,
+      "y": 10.0,
+      "z": 0.0,
+      "floor_id": "F1",
+      "coordinate_frame": "JACOBS_LOCAL"
+     },
+     "distance_m": 7.0,
+     "bearing_degrees": 270.0
+    },
+    {
+     "instruction": "Proceed 12 m to East Entrance",
+     "to_node": "F1_ENTRANCE_EAST",
+     "waypoint": {
+      "x": 35.0,
+      "y": 0.0,
+      "z": 0.0,
+      "floor_id": "F1",
+      "coordinate_frame": "JACOBS_LOCAL"
+     },
+     "distance_m": 12.2,
+     "bearing_degrees": 145.0
+    }
+   ],
+   "total_distance_m": 36.2,
+   "total_cost": 154.2,
+   "hazards_considered": [
+    "HAZ_001",
+    "HAZ_002"
+   ],
+   "assumptions": [
+    "Illustrative simulated building geometry",
+    "Graph cost is not a safety guarantee; command approval required"
+   ],
+   "requires_command_approval": true,
+   "unreachable_reason": null,
+   "alternate": null
+  },
+  "CIV_003": {
+   "route_id": "EVAC_CIV_003",
+   "status": "candidate",
+   "start_node": "F3_STUDIO_310",
+   "destination_node": "F1_ENTRANCE_MAIN",
+   "nodes": [
+    "F3_STUDIO_310",
+    "F3_CORRIDOR_WEST",
+    "F3_STAIR_A",
+    "F2_STAIR_A",
+    "F1_STAIR_A",
+    "F1_CORRIDOR_WEST",
+    "F1_CORRIDOR_CENTER",
+    "F1_ENTRANCE_MAIN"
+   ],
+   "edge_ids": [
+    "E026",
+    "E023",
+    "E034",
+    "E031",
+    "E009",
+    "E007",
+    "E037"
+   ],
+   "polyline": [
+    {
+     "x": 12.0,
+     "y": 16.0,
+     "z": 8.0,
+     "floor_id": "F3",
+     "coordinate_frame": "JACOBS_LOCAL"
+    },
+    {
+     "x": 12.0,
+     "y": 10.0,
+     "z": 8.0,
+     "floor_id": "F3",
+     "coordinate_frame": "JACOBS_LOCAL"
+    },
+    {
+     "x": 5.0,
+     "y": 10.0,
+     "z": 8.0,
+     "floor_id": "F3",
+     "coordinate_frame": "JACOBS_LOCAL"
+    },
+    {
+     "x": 5.0,
+     "y": 10.0,
+     "z": 4.0,
+     "floor_id": "F2",
+     "coordinate_frame": "JACOBS_LOCAL"
+    },
+    {
+     "x": 5.0,
+     "y": 10.0,
+     "z": 0.0,
+     "floor_id": "F1",
+     "coordinate_frame": "JACOBS_LOCAL"
+    },
+    {
+     "x": 12.0,
+     "y": 10.0,
+     "z": 0.0,
+     "floor_id": "F1",
+     "coordinate_frame": "JACOBS_LOCAL"
+    },
+    {
+     "x": 20.0,
+     "y": 10.0,
+     "z": 0.0,
+     "floor_id": "F1",
+     "coordinate_frame": "JACOBS_LOCAL"
+    },
+    {
+     "x": 20.0,
+     "y": 0.0,
+     "z": 0.0,
+     "floor_id": "F1",
+     "coordinate_frame": "JACOBS_LOCAL"
+    }
+   ],
+   "steps": [
+    {
+     "instruction": "Proceed 6 m to West Corridor (F3)",
+     "to_node": "F3_CORRIDOR_WEST",
+     "waypoint": {
+      "x": 12.0,
+      "y": 10.0,
+      "z": 8.0,
+      "floor_id": "F3",
+      "coordinate_frame": "JACOBS_LOCAL"
+     },
+     "distance_m": 6.0,
+     "bearing_degrees": 180.0
+    },
+    {
+     "instruction": "Proceed 7 m to West Stairwell (F3)",
+     "to_node": "F3_STAIR_A",
+     "waypoint": {
+      "x": 5.0,
+      "y": 10.0,
+      "z": 8.0,
+      "floor_id": "F3",
+      "coordinate_frame": "JACOBS_LOCAL"
+     },
+     "distance_m": 7.0,
+     "bearing_degrees": 270.0
+    },
+    {
+     "instruction": "Take stairs down to West Stairwell (F2)",
+     "to_node": "F2_STAIR_A",
+     "waypoint": {
+      "x": 5.0,
+      "y": 10.0,
+      "z": 4.0,
+      "floor_id": "F2",
+      "coordinate_frame": "JACOBS_LOCAL"
+     },
+     "distance_m": 4.0,
+     "bearing_degrees": 0.0
+    },
+    {
+     "instruction": "Take stairs down to West Stairwell (F1)",
+     "to_node": "F1_STAIR_A",
+     "waypoint": {
+      "x": 5.0,
+      "y": 10.0,
+      "z": 0.0,
+      "floor_id": "F1",
+      "coordinate_frame": "JACOBS_LOCAL"
+     },
+     "distance_m": 4.0,
+     "bearing_degrees": 0.0
+    },
+    {
+     "instruction": "Proceed 7 m to West Corridor (F1)",
+     "to_node": "F1_CORRIDOR_WEST",
+     "waypoint": {
+      "x": 12.0,
+      "y": 10.0,
+      "z": 0.0,
+      "floor_id": "F1",
+      "coordinate_frame": "JACOBS_LOCAL"
+     },
+     "distance_m": 7.0,
+     "bearing_degrees": 90.0
+    },
+    {
+     "instruction": "Proceed 8 m to Center Corridor (F1)",
+     "to_node": "F1_CORRIDOR_CENTER",
+     "waypoint": {
+      "x": 20.0,
+      "y": 10.0,
+      "z": 0.0,
+      "floor_id": "F1",
+      "coordinate_frame": "JACOBS_LOCAL"
+     },
+     "distance_m": 8.0,
+     "bearing_degrees": 90.0
+    },
+    {
+     "instruction": "Proceed 10 m to Main Entrance",
+     "to_node": "F1_ENTRANCE_MAIN",
+     "waypoint": {
+      "x": 20.0,
+      "y": 0.0,
+      "z": 0.0,
+      "floor_id": "F1",
+      "coordinate_frame": "JACOBS_LOCAL"
+     },
+     "distance_m": 10.0,
+     "bearing_degrees": 180.0
+    }
+   ],
+   "total_distance_m": 46.0,
+   "total_cost": 183.2,
+   "hazards_considered": [
+    "HAZ_001",
+    "HAZ_002"
+   ],
+   "assumptions": [
+    "Illustrative simulated building geometry",
+    "Graph cost is not a safety guarantee; command approval required"
+   ],
+   "requires_command_approval": true,
+   "unreachable_reason": null,
+   "alternate": null
+  },
+  "CIV_004": {
+   "route_id": "EVAC_CIV_004",
+   "status": "candidate",
+   "start_node": "F3_PROTOTYPING_LAB",
+   "destination_node": "F1_ENTRANCE_EAST",
+   "nodes": [
+    "F3_PROTOTYPING_LAB",
+    "F3_CORRIDOR_EAST",
+    "F3_STAIR_B",
+    "F2_STAIR_B",
+    "F1_STAIR_B",
+    "F1_CORRIDOR_EAST",
+    "F1_ENTRANCE_EAST"
+   ],
+   "edge_ids": [
+    "E027",
+    "E024",
+    "E035",
+    "E032",
+    "E010",
+    "E038"
+   ],
+   "polyline": [
+    {
+     "x": 28.0,
+     "y": 16.0,
+     "z": 8.0,
+     "floor_id": "F3",
+     "coordinate_frame": "JACOBS_LOCAL"
+    },
+    {
+     "x": 28.0,
+     "y": 10.0,
+     "z": 8.0,
+     "floor_id": "F3",
+     "coordinate_frame": "JACOBS_LOCAL"
+    },
+    {
+     "x": 35.0,
+     "y": 10.0,
+     "z": 8.0,
+     "floor_id": "F3",
+     "coordinate_frame": "JACOBS_LOCAL"
+    },
+    {
+     "x": 35.0,
+     "y": 10.0,
+     "z": 4.0,
+     "floor_id": "F2",
+     "coordinate_frame": "JACOBS_LOCAL"
+    },
+    {
+     "x": 35.0,
+     "y": 10.0,
+     "z": 0.0,
+     "floor_id": "F1",
+     "coordinate_frame": "JACOBS_LOCAL"
+    },
+    {
+     "x": 28.0,
+     "y": 10.0,
+     "z": 0.0,
+     "floor_id": "F1",
+     "coordinate_frame": "JACOBS_LOCAL"
+    },
+    {
+     "x": 35.0,
+     "y": 0.0,
+     "z": 0.0,
+     "floor_id": "F1",
+     "coordinate_frame": "JACOBS_LOCAL"
+    }
+   ],
+   "steps": [
+    {
+     "instruction": "Proceed 6 m to East Corridor (F3)",
+     "to_node": "F3_CORRIDOR_EAST",
+     "waypoint": {
+      "x": 28.0,
+      "y": 10.0,
+      "z": 8.0,
+      "floor_id": "F3",
+      "coordinate_frame": "JACOBS_LOCAL"
+     },
+     "distance_m": 6.0,
+     "bearing_degrees": 180.0
+    },
+    {
+     "instruction": "Proceed 7 m to East Stairwell (F3)",
+     "to_node": "F3_STAIR_B",
+     "waypoint": {
+      "x": 35.0,
+      "y": 10.0,
+      "z": 8.0,
+      "floor_id": "F3",
+      "coordinate_frame": "JACOBS_LOCAL"
+     },
+     "distance_m": 7.0,
+     "bearing_degrees": 90.0
+    },
+    {
+     "instruction": "Take stairs down to East Stairwell (F2)",
+     "to_node": "F2_STAIR_B",
+     "waypoint": {
+      "x": 35.0,
+      "y": 10.0,
+      "z": 4.0,
+      "floor_id": "F2",
+      "coordinate_frame": "JACOBS_LOCAL"
+     },
+     "distance_m": 4.0,
+     "bearing_degrees": 0.0
+    },
+    {
+     "instruction": "Take stairs down to East Stairwell (F1)",
+     "to_node": "F1_STAIR_B",
+     "waypoint": {
+      "x": 35.0,
+      "y": 10.0,
+      "z": 0.0,
+      "floor_id": "F1",
+      "coordinate_frame": "JACOBS_LOCAL"
+     },
+     "distance_m": 4.0,
+     "bearing_degrees": 0.0
+    },
+    {
+     "instruction": "Proceed 7 m to East Corridor (F1)",
+     "to_node": "F1_CORRIDOR_EAST",
+     "waypoint": {
+      "x": 28.0,
+      "y": 10.0,
+      "z": 0.0,
+      "floor_id": "F1",
+      "coordinate_frame": "JACOBS_LOCAL"
+     },
+     "distance_m": 7.0,
+     "bearing_degrees": 270.0
+    },
+    {
+     "instruction": "Proceed 12 m to East Entrance",
+     "to_node": "F1_ENTRANCE_EAST",
+     "waypoint": {
+      "x": 35.0,
+      "y": 0.0,
+      "z": 0.0,
+      "floor_id": "F1",
+      "coordinate_frame": "JACOBS_LOCAL"
+     },
+     "distance_m": 12.2,
+     "bearing_degrees": 145.0
+    }
+   ],
+   "total_distance_m": 40.2,
+   "total_cost": 220.4,
+   "hazards_considered": [
+    "HAZ_001",
+    "HAZ_002"
+   ],
+   "assumptions": [
+    "Illustrative simulated building geometry",
+    "Graph cost is not a safety guarantee; command approval required"
+   ],
+   "requires_command_approval": true,
+   "unreachable_reason": null,
+   "alternate": null
+  },
+  "CIV_005": {
+   "route_id": "EVAC_CIV_005",
+   "status": "candidate",
+   "start_node": "F1_STUDIO_110",
+   "destination_node": "F1_ENTRANCE_MAIN",
+   "nodes": [
+    "F1_STUDIO_110",
+    "F1_CORRIDOR_WEST",
+    "F1_CORRIDOR_CENTER",
+    "F1_ENTRANCE_MAIN"
+   ],
+   "edge_ids": [
+    "E012",
+    "E007",
+    "E037"
+   ],
+   "polyline": [
+    {
+     "x": 12.0,
+     "y": 16.0,
+     "z": 0.0,
+     "floor_id": "F1",
+     "coordinate_frame": "JACOBS_LOCAL"
+    },
+    {
+     "x": 12.0,
+     "y": 10.0,
+     "z": 0.0,
+     "floor_id": "F1",
+     "coordinate_frame": "JACOBS_LOCAL"
+    },
+    {
+     "x": 20.0,
+     "y": 10.0,
+     "z": 0.0,
+     "floor_id": "F1",
+     "coordinate_frame": "JACOBS_LOCAL"
+    },
+    {
+     "x": 20.0,
+     "y": 0.0,
+     "z": 0.0,
+     "floor_id": "F1",
+     "coordinate_frame": "JACOBS_LOCAL"
+    }
+   ],
+   "steps": [
+    {
+     "instruction": "Proceed 6 m to West Corridor (F1)",
+     "to_node": "F1_CORRIDOR_WEST",
+     "waypoint": {
+      "x": 12.0,
+      "y": 10.0,
+      "z": 0.0,
+      "floor_id": "F1",
+      "coordinate_frame": "JACOBS_LOCAL"
+     },
+     "distance_m": 6.0,
+     "bearing_degrees": 180.0
+    },
+    {
+     "instruction": "Proceed 8 m to Center Corridor (F1)",
+     "to_node": "F1_CORRIDOR_CENTER",
+     "waypoint": {
+      "x": 20.0,
+      "y": 10.0,
+      "z": 0.0,
+      "floor_id": "F1",
+      "coordinate_frame": "JACOBS_LOCAL"
+     },
+     "distance_m": 8.0,
+     "bearing_degrees": 90.0
+    },
+    {
+     "instruction": "Proceed 10 m to Main Entrance",
+     "to_node": "F1_ENTRANCE_MAIN",
+     "waypoint": {
+      "x": 20.0,
+      "y": 0.0,
+      "z": 0.0,
+      "floor_id": "F1",
+      "coordinate_frame": "JACOBS_LOCAL"
+     },
+     "distance_m": 10.0,
+     "bearing_degrees": 180.0
+    }
+   ],
+   "total_distance_m": 24.0,
+   "total_cost": 74.5,
+   "hazards_considered": [
+    "HAZ_001",
+    "HAZ_002"
+   ],
+   "assumptions": [
+    "Illustrative simulated building geometry",
+    "Graph cost is not a safety guarantee; command approval required"
+   ],
+   "requires_command_approval": true,
+   "unreachable_reason": null,
+   "alternate": null
+  },
+  "CIV_006": {
+   "route_id": "EVAC_CIV_006",
+   "status": "candidate",
+   "start_node": "F1_STUDIO_120",
+   "destination_node": "F1_ENTRANCE_EAST",
+   "nodes": [
+    "F1_STUDIO_120",
+    "F1_CORRIDOR_EAST",
+    "F1_ENTRANCE_EAST"
+   ],
+   "edge_ids": [
+    "E013",
+    "E038"
+   ],
+   "polyline": [
+    {
+     "x": 28.0,
+     "y": 16.0,
+     "z": 0.0,
+     "floor_id": "F1",
+     "coordinate_frame": "JACOBS_LOCAL"
+    },
+    {
+     "x": 28.0,
+     "y": 10.0,
+     "z": 0.0,
+     "floor_id": "F1",
+     "coordinate_frame": "JACOBS_LOCAL"
+    },
+    {
+     "x": 35.0,
+     "y": 0.0,
+     "z": 0.0,
+     "floor_id": "F1",
+     "coordinate_frame": "JACOBS_LOCAL"
+    }
+   ],
+   "steps": [
+    {
+     "instruction": "Proceed 6 m to East Corridor (F1)",
+     "to_node": "F1_CORRIDOR_EAST",
+     "waypoint": {
+      "x": 28.0,
+      "y": 10.0,
+      "z": 0.0,
+      "floor_id": "F1",
+      "coordinate_frame": "JACOBS_LOCAL"
+     },
+     "distance_m": 6.0,
+     "bearing_degrees": 180.0
+    },
+    {
+     "instruction": "Proceed 12 m to East Entrance",
+     "to_node": "F1_ENTRANCE_EAST",
+     "waypoint": {
+      "x": 35.0,
+      "y": 0.0,
+      "z": 0.0,
+      "floor_id": "F1",
+      "coordinate_frame": "JACOBS_LOCAL"
+     },
+     "distance_m": 12.2,
+     "bearing_degrees": 145.0
+    }
+   ],
+   "total_distance_m": 18.2,
+   "total_cost": 80.3,
+   "hazards_considered": [
+    "HAZ_001",
+    "HAZ_002"
+   ],
+   "assumptions": [
+    "Illustrative simulated building geometry",
+    "Graph cost is not a safety guarantee; command approval required"
+   ],
+   "requires_command_approval": true,
+   "unreachable_reason": null,
+   "alternate": null
+  }
+ },
+ "advisories": {
+  "CIV_001": {
+   "civilian_id": "CIV_001",
+   "message": "Fire has been reported on your floor (F2). Recommended evacuation (pending command approval): Proceed 6 m to West Corridor (F2) Then Proceed 7 m to West Stairwell (F2) Then Take stairs down to West Stairwell (F1) Then Proceed 7 m to West Corridor (F1) Then Proceed 8 m to Center Corridor (F1) Then Proceed 10 m to Main Entrance. You will exit at Main Entrance. A responder team has been assigned to review your situation.",
+   "requires_command_approval": true,
+   "generated_at": "2026-10-17T23:15:11.533714+00:00",
+   "based_on": {
+    "hazard_ids": [
+     "HAZ_001"
+    ],
+    "route_id": "EVAC_CIV_001",
+    "responder_en_route": true
+   }
+  },
+  "CIV_002": {
+   "civilian_id": "CIV_002",
+   "message": "No hazards are currently reported on your floor (B). Recommended evacuation (pending command approval): Proceed 6 m to East Corridor (B) Then Proceed 7 m to East Stairwell (B) Then Take stairs up to East Stairwell (F1) Then Proceed 7 m to East Corridor (F1) Then Proceed 12 m to East Entrance. You will exit at East Entrance. A responder team has been assigned to review your situation.",
+   "requires_command_approval": true,
+   "generated_at": "2026-10-17T23:15:11.534890+00:00",
+   "based_on": {
+    "hazard_ids": [],
+    "route_id": "EVAC_CIV_002",
+    "responder_en_route": true
+   }
+  },
+  "CIV_003": {
+   "civilian_id": "CIV_003",
+   "message": "Smoke has been reported on your floor (F3). Recommended evacuation (pending command approval): Proceed 6 m to West Corridor (F3) Then Proceed 7 m to West Stairwell (F3) Then Take stairs down to West Stairwell (F2) Then Take stairs down to West Stairwell (F1) Then Proceed 7 m to West Corridor (F1) Then Proceed 8 m to Center Corridor (F1) Then Proceed 10 m to Main Entrance. You will exit at Main Entrance.",
+   "requires_command_approval": true,
+   "generated_at": "2026-10-17T23:15:11.536022+00:00",
+   "based_on": {
+    "hazard_ids": [
+     "HAZ_002"
+    ],
+    "route_id": "EVAC_CIV_003",
+    "responder_en_route": false
+   }
+  },
+  "CIV_004": {
+   "civilian_id": "CIV_004",
+   "message": "Smoke has been reported on your floor (F3). Recommended evacuation (pending command approval): Proceed 6 m to East Corridor (F3) Then Proceed 7 m to East Stairwell (F3) Then Take stairs down to East Stairwell (F2) Then Take stairs down to East Stairwell (F1) Then Proceed 7 m to East Corridor (F1) Then Proceed 12 m to East Entrance. You will exit at East Entrance.",
+   "requires_command_approval": true,
+   "generated_at": "2026-10-17T23:15:11.537108+00:00",
+   "based_on": {
+    "hazard_ids": [
+     "HAZ_002"
+    ],
+    "route_id": "EVAC_CIV_004",
+    "responder_en_route": false
+   }
+  },
+  "CIV_005": {
+   "civilian_id": "CIV_005",
+   "message": "No hazards are currently reported on your floor (F1). Recommended evacuation (pending command approval): Proceed 6 m to West Corridor (F1) Then Proceed 8 m to Center Corridor (F1) Then Proceed 10 m to Main Entrance. You will exit at Main Entrance.",
+   "requires_command_approval": true,
+   "generated_at": "2026-10-17T23:15:11.538206+00:00",
+   "based_on": {
+    "hazard_ids": [],
+    "route_id": "EVAC_CIV_005",
+    "responder_en_route": false
+   }
+  },
+  "CIV_006": {
+   "civilian_id": "CIV_006",
+   "message": "No hazards are currently reported on your floor (F1). Recommended evacuation (pending command approval): Proceed 6 m to East Corridor (F1) Then Proceed 12 m to East Entrance. You will exit at East Entrance.",
+   "requires_command_approval": true,
+   "generated_at": "2026-10-17T23:15:11.539334+00:00",
+   "based_on": {
+    "hazard_ids": [],
+    "route_id": "EVAC_CIV_006",
+    "responder_en_route": false
+   }
+  }
+ },
+ "state": {
+  "building_id": "jacobs_hall",
+  "coordinate_frame": "JACOBS_LOCAL",
+  "timestamp": "2026-10-17T23:15:11.539994+00:00",
+  "entities": [
+   {
+    "entity_id": "CIV_001",
+    "entity_type": "civilian",
+    "name": null,
+    "world_position": {
+     "x": 12.0,
+     "y": 16.0,
+     "z": 4.0,
+     "floor_id": "F2",
+     "coordinate_frame": "JACOBS_LOCAL"
+    },
+    "graph_node_id": "F2_STUDIO_210",
+    "source": "civilian_report",
+    "position_status": "reported",
+    "last_updated": "2026-10-17T23:15:11.494879+00:00",
+    "report": {
+     "raw_text": "I'm in Studio 210 on the second floor. There's smoke outside and my friend can't walk.",
+     "location": {
+      "node_id": "F2_STUDIO_210",
+      "floor_id": "F2",
+      "match_type": "room_number",
+      "matched_text": "210",
+      "conflict": null
+     },
+     "people_count": 2,
+     "mobility_limited": true,
+     "unconscious": false,
+     "smoke_reported": true,
+     "fire_reported": false,
+     "exits_blocked": false,
+     "unknowns": []
+    },
+    "priority": {
+     "priority": "urgent_review",
+     "score": 6,
+     "reported_conditions": [
+      "smoke_nearby",
+      "mobility_limited"
+     ],
+     "reason": "occupant reports smoke nearby; occupant or companion cannot self-evacuate; 2 people reported together",
+     "requires_responder_review": true,
+     "flags": []
+    },
+    "flags": [
+     "position is node anchor, not exact"
+    ]
+   },
+   {
+    "entity_id": "CIV_002",
+    "entity_type": "civilian",
+    "name": null,
+    "world_position": {
+     "x": 28.0,
+     "y": 16.0,
+     "z": -4.0,
+     "floor_id": "B",
+     "coordinate_frame": "JACOBS_LOCAL"
+    },
+    "graph_node_id": "B_METAL_SHOP",
+    "source": "civilian_report",
+    "position_status": "reported",
+    "last_updated": "2026-10-17T23:15:11.495873+00:00",
+    "report": {
+     "raw_text": "We're trapped in the Metal Shop in the basement, three of us, there's fire by the door.",
+     "location": {
+      "node_id": "B_METAL_SHOP",
+      "floor_id": "B",
+      "match_type": "room_label",
+      "matched_text": "Metal Shop",
+      "conflict": null
+     },
+     "people_count": 3,
+     "mobility_limited": false,
+     "unconscious": false,
+     "smoke_reported": false,
+     "fire_reported": true,
+     "exits_blocked": true,
+     "unknowns": []
+    },
+    "priority": {
+     "priority": "urgent_review",
+     "score": 6,
+     "reported_conditions": [
+      "fire_nearby",
+      "exit_blocked"
+     ],
+     "reason": "occupant reports fire nearby; occupant reports blocked egress; 3 people reported together",
+     "requires_responder_review": true,
+     "flags": []
+    },
+    "flags": [
+     "position is node anchor, not exact"
+    ]
+   },
+   {
+    "entity_id": "CIV_003",
+    "entity_type": "civilian",
+    "name": null,
+    "world_position": {
+     "x": 12.0,
+     "y": 16.0,
+     "z": 8.0,
+     "floor_id": "F3",
+     "coordinate_frame": "JACOBS_LOCAL"
+    },
+    "graph_node_id": "F3_STUDIO_310",
+    "source": "civilian_report",
+    "position_status": "reported",
+    "last_updated": "2026-10-17T23:15:11.496734+00:00",
+    "report": {
+     "raw_text": "Studio 310, smoke is coming under the door.",
+     "location": {
+      "node_id": "F3_STUDIO_310",
+      "floor_id": "F3",
+      "match_type": "room_number",
+      "matched_text": "310",
+      "conflict": null
+     },
+     "people_count": 1,
+     "mobility_limited": false,
+     "unconscious": false,
+     "smoke_reported": true,
+     "fire_reported": false,
+     "exits_blocked": false,
+     "unknowns": [
+      "people_count"
+     ]
+    },
+    "priority": {
+     "priority": "standard_review",
+     "score": 2,
+     "reported_conditions": [
+      "smoke_nearby"
+     ],
+     "reason": "occupant reports smoke nearby",
+     "requires_responder_review": true,
+     "flags": []
+    },
+    "flags": [
+     "position is node anchor, not exact"
+    ]
+   },
+   {
+    "entity_id": "CIV_004",
+    "entity_type": "civilian",
+    "name": null,
+    "world_position": {
+     "x": 28.0,
+     "y": 16.0,
+     "z": 8.0,
+     "floor_id": "F3",
+     "coordinate_frame": "JACOBS_LOCAL"
+    },
+    "graph_node_id": "F3_PROTOTYPING_LAB",
+    "source": "civilian_report",
+    "position_status": "reported",
+    "last_updated": "2026-10-17T23:15:11.497571+00:00",
+    "report": {
+     "raw_text": "Advanced Prototyping Lab, two people, we can't get out.",
+     "location": {
+      "node_id": "F3_PROTOTYPING_LAB",
+      "floor_id": "F3",
+      "match_type": "room_label",
+      "matched_text": "Advanced Prototyping Lab",
+      "conflict": null
+     },
+     "people_count": 2,
+     "mobility_limited": false,
+     "unconscious": false,
+     "smoke_reported": false,
+     "fire_reported": false,
+     "exits_blocked": true,
+     "unknowns": []
+    },
+    "priority": {
+     "priority": "priority_review",
+     "score": 3,
+     "reported_conditions": [
+      "exit_blocked"
+     ],
+     "reason": "occupant reports blocked egress; 2 people reported together",
+     "requires_responder_review": true,
+     "flags": []
+    },
+    "flags": [
+     "position is node anchor, not exact"
+    ]
+   },
+   {
+    "entity_id": "CIV_005",
+    "entity_type": "civilian",
+    "name": null,
+    "world_position": {
+     "x": 12.0,
+     "y": 16.0,
+     "z": 0.0,
+     "floor_id": "F1",
+     "coordinate_frame": "JACOBS_LOCAL"
+    },
+    "graph_node_id": "F1_STUDIO_110",
+    "source": "civilian_report",
+    "position_status": "reported",
+    "last_updated": "2026-10-17T23:15:11.498385+00:00",
+    "report": {
+     "raw_text": "I'm in Studio 110 and I smell smoke.",
+     "location": {
+      "node_id": "F1_STUDIO_110",
+      "floor_id": "F1",
+      "match_type": "room_number",
+      "matched_text": "110",
+      "conflict": null
+     },
+     "people_count": 1,
+     "mobility_limited": false,
+     "unconscious": false,
+     "smoke_reported": true,
+     "fire_reported": false,
+     "exits_blocked": false,
+     "unknowns": [
+      "people_count"
+     ]
+    },
+    "priority": {
+     "priority": "standard_review",
+     "score": 2,
+     "reported_conditions": [
+      "smoke_nearby"
+     ],
+     "reason": "occupant reports smoke nearby",
+     "requires_responder_review": true,
+     "flags": []
+    },
+    "flags": [
+     "position is node anchor, not exact"
+    ]
+   },
+   {
+    "entity_id": "CIV_006",
+    "entity_type": "civilian",
+    "name": null,
+    "world_position": {
+     "x": 28.0,
+     "y": 16.0,
+     "z": 0.0,
+     "floor_id": "F1",
+     "coordinate_frame": "JACOBS_LOCAL"
+    },
+    "graph_node_id": "F1_STUDIO_120",
+    "source": "civilian_report",
+    "position_status": "reported",
+    "last_updated": "2026-10-17T23:15:11.499133+00:00",
+    "report": {
+     "raw_text": "Studio 120, I use a wheelchair.",
+     "location": {
+      "node_id": "F1_STUDIO_120",
+      "floor_id": "F1",
+      "match_type": "room_number",
+      "matched_text": "120",
+      "conflict": null
+     },
+     "people_count": 1,
+     "mobility_limited": true,
+     "unconscious": false,
+     "smoke_reported": false,
+     "fire_reported": false,
+     "exits_blocked": false,
+     "unknowns": [
+      "people_count"
+     ]
+    },
+    "priority": {
+     "priority": "priority_review",
+     "score": 3,
+     "reported_conditions": [
+      "mobility_limited"
+     ],
+     "reason": "occupant or companion cannot self-evacuate",
+     "requires_responder_review": true,
+     "flags": []
+    },
+    "flags": [
+     "position is node anchor, not exact"
+    ]
+   },
+   {
+    "entity_id": "UNIT_ALPHA",
+    "entity_type": "responder",
+    "name": "Alpha",
+    "world_position": {
+     "x": 20.0,
+     "y": -10.0,
+     "z": 0.0,
+     "floor_id": "F1",
+     "coordinate_frame": "JACOBS_LOCAL"
+    },
+    "graph_node_id": "EXT_STAGING",
+    "source": "responder_report",
+    "position_status": "reported",
+    "last_updated": "2026-10-17T23:15:11.499996+00:00",
+    "report": null,
+    "priority": null,
+    "flags": [
+     "position is node anchor, not exact"
+    ]
+   },
+   {
+    "entity_id": "UNIT_BRAVO",
+    "entity_type": "responder",
+    "name": "Bravo",
+    "world_position": {
+     "x": 20.0,
+     "y": -10.0,
+     "z": 0.0,
+     "floor_id": "F1",
+     "coordinate_frame": "JACOBS_LOCAL"
+    },
+    "graph_node_id": "EXT_STAGING",
+    "source": "responder_report",
+    "position_status": "reported",
+    "last_updated": "2026-10-17T23:15:11.500980+00:00",
+    "report": null,
+    "priority": null,
+    "flags": [
+     "position is node anchor, not exact"
+    ]
+   }
+  ],
+  "hazards": [
+   {
+    "hazard_id": "HAZ_001",
+    "hazard_type": "fire",
+    "node_id": "F2_CORRIDOR_EAST",
+    "edge_id": null,
+    "verified": true,
+    "source": "demo_control",
+    "description": "demo ignition",
+    "created_at": "2026-10-17T23:15:11.501866+00:00"
+   },
+   {
+    "hazard_id": "HAZ_002",
+    "hazard_type": "smoke",
+    "node_id": "F3_CORRIDOR_CENTER",
+    "edge_id": null,
+    "verified": true,
+    "source": "responder_report",
+    "description": "",
+    "created_at": "2026-10-17T23:15:11.505113+00:00"
+   }
+  ],
+  "routes": [
+   {
+    "route_id": "RESCUE_UNIT_ALPHA",
+    "status": "candidate",
+    "start_node": "EXT_STAGING",
+    "destination_node": "F2_STUDIO_210",
+    "nodes": [
+     "EXT_STAGING",
+     "F1_ENTRANCE_MAIN",
+     "F1_CORRIDOR_CENTER",
+     "F1_CORRIDOR_WEST",
+     "F1_STAIR_A",
+     "F2_STAIR_A",
+     "F2_CORRIDOR_WEST",
+     "F2_STUDIO_210"
+    ],
+    "edge_ids": [
+     "E039",
+     "E037",
+     "E007",
+     "E009",
+     "E031",
+     "E016",
+     "E019"
+    ],
+    "polyline": [
+     {
+      "x": 20.0,
+      "y": -10.0,
+      "z": 0.0,
+      "floor_id": "F1",
+      "coordinate_frame": "JACOBS_LOCAL"
+     },
+     {
+      "x": 20.0,
+      "y": 0.0,
+      "z": 0.0,
+      "floor_id": "F1",
+      "coordinate_frame": "JACOBS_LOCAL"
+     },
+     {
+      "x": 20.0,
+      "y": 10.0,
+      "z": 0.0,
+      "floor_id": "F1",
+      "coordinate_frame": "JACOBS_LOCAL"
+     },
+     {
+      "x": 12.0,
+      "y": 10.0,
+      "z": 0.0,
+      "floor_id": "F1",
+      "coordinate_frame": "JACOBS_LOCAL"
+     },
+     {
+      "x": 5.0,
+      "y": 10.0,
+      "z": 0.0,
+      "floor_id": "F1",
+      "coordinate_frame": "JACOBS_LOCAL"
+     },
+     {
+      "x": 5.0,
+      "y": 10.0,
+      "z": 4.0,
+      "floor_id": "F2",
+      "coordinate_frame": "JACOBS_LOCAL"
+     },
+     {
+      "x": 12.0,
+      "y": 10.0,
+      "z": 4.0,
+      "floor_id": "F2",
+      "coordinate_frame": "JACOBS_LOCAL"
+     },
+     {
+      "x": 12.0,
+      "y": 16.0,
+      "z": 4.0,
+      "floor_id": "F2",
+      "coordinate_frame": "JACOBS_LOCAL"
+     }
+    ],
+    "steps": [
+     {
+      "instruction": "Proceed 10 m to Main Entrance",
+      "to_node": "F1_ENTRANCE_MAIN",
+      "waypoint": {
+       "x": 20.0,
+       "y": 0.0,
+       "z": 0.0,
+       "floor_id": "F1",
+       "coordinate_frame": "JACOBS_LOCAL"
+      },
+      "distance_m": 10.0,
+      "bearing_degrees": 0.0
+     },
+     {
+      "instruction": "Proceed 10 m to Center Corridor (F1)",
+      "to_node": "F1_CORRIDOR_CENTER",
+      "waypoint": {
+       "x": 20.0,
+       "y": 10.0,
+       "z": 0.0,
+       "floor_id": "F1",
+       "coordinate_frame": "JACOBS_LOCAL"
+      },
+      "distance_m": 10.0,
+      "bearing_degrees": 0.0
+     },
+     {
+      "instruction": "Proceed 8 m to West Corridor (F1)",
+      "to_node": "F1_CORRIDOR_WEST",
+      "waypoint": {
+       "x": 12.0,
+       "y": 10.0,
+       "z": 0.0,
+       "floor_id": "F1",
+       "coordinate_frame": "JACOBS_LOCAL"
+      },
+      "distance_m": 8.0,
+      "bearing_degrees": 270.0
+     },
+     {
+      "instruction": "Proceed 7 m to West Stairwell (F1)",
+      "to_node": "F1_STAIR_A",
+      "waypoint": {
+       "x": 5.0,
+       "y": 10.0,
+       "z": 0.0,
+       "floor_id": "F1",
+       "coordinate_frame": "JACOBS_LOCAL"
+      },
+      "distance_m": 7.0,
+      "bearing_degrees": 270.0
+     },
+     {
+      "instruction": "Take stairs up to West Stairwell (F2)",
+      "to_node": "F2_STAIR_A",
+      "waypoint": {
+       "x": 5.0,
+       "y": 10.0,
+       "z": 4.0,
+       "floor_id": "F2",
+       "coordinate_frame": "JACOBS_LOCAL"
+      },
+      "distance_m": 4.0,
+      "bearing_degrees": 0.0
+     },
+     {
+      "instruction": "Proceed 7 m to West Corridor (F2)",
+      "to_node": "F2_CORRIDOR_WEST",
+      "waypoint": {
+       "x": 12.0,
+       "y": 10.0,
+       "z": 4.0,
+       "floor_id": "F2",
+       "coordinate_frame": "JACOBS_LOCAL"
+      },
+      "distance_m": 7.0,
+      "bearing_degrees": 90.0
+     },
+     {
+      "instruction": "Proceed 6 m to Studio 210",
+      "to_node": "F2_STUDIO_210",
+      "waypoint": {
+       "x": 12.0,
+       "y": 16.0,
+       "z": 4.0,
+       "floor_id": "F2",
+       "coordinate_frame": "JACOBS_LOCAL"
+      },
+      "distance_m": 6.0,
+      "bearing_degrees": 0.0
+     }
+    ],
+    "total_distance_m": 52.0,
+    "total_cost": 254.1,
+    "hazards_considered": [
+     "HAZ_001",
+     "HAZ_002"
+    ],
+    "assumptions": [
+     "Illustrative simulated building geometry",
+     "Graph cost is not a safety guarantee; command approval required"
+    ],
+    "requires_command_approval": true,
+    "unreachable_reason": null,
+    "alternate": null,
+    "meta": {
+     "responder_id": "UNIT_ALPHA",
+     "civilian_id": "CIV_001"
+    }
+   },
+   {
+    "route_id": "RESCUE_UNIT_BRAVO",
+    "status": "candidate",
+    "start_node": "EXT_STAGING",
+    "destination_node": "B_METAL_SHOP",
+    "nodes": [
+     "EXT_STAGING",
+     "F1_ENTRANCE_MAIN",
+     "F1_CORRIDOR_CENTER",
+     "F1_CORRIDOR_EAST",
+     "F1_STAIR_B",
+     "B_STAIR_B",
+     "B_CORRIDOR_EAST",
+     "B_METAL_SHOP"
+    ],
+    "edge_ids": [
+     "E039",
+     "E037",
+     "E008",
+     "E010",
+     "E029",
+     "E003",
+     "E006"
+    ],
+    "polyline": [
+     {
+      "x": 20.0,
+      "y": -10.0,
+      "z": 0.0,
+      "floor_id": "F1",
+      "coordinate_frame": "JACOBS_LOCAL"
+     },
+     {
+      "x": 20.0,
+      "y": 0.0,
+      "z": 0.0,
+      "floor_id": "F1",
+      "coordinate_frame": "JACOBS_LOCAL"
+     },
+     {
+      "x": 20.0,
+      "y": 10.0,
+      "z": 0.0,
+      "floor_id": "F1",
+      "coordinate_frame": "JACOBS_LOCAL"
+     },
+     {
+      "x": 28.0,
+      "y": 10.0,
+      "z": 0.0,
+      "floor_id": "F1",
+      "coordinate_frame": "JACOBS_LOCAL"
+     },
+     {
+      "x": 35.0,
+      "y": 10.0,
+      "z": 0.0,
+      "floor_id": "F1",
+      "coordinate_frame": "JACOBS_LOCAL"
+     },
+     {
+      "x": 35.0,
+      "y": 10.0,
+      "z": -4.0,
+      "floor_id": "B",
+      "coordinate_frame": "JACOBS_LOCAL"
+     },
+     {
+      "x": 28.0,
+      "y": 10.0,
+      "z": -4.0,
+      "floor_id": "B",
+      "coordinate_frame": "JACOBS_LOCAL"
+     },
+     {
+      "x": 28.0,
+      "y": 16.0,
+      "z": -4.0,
+      "floor_id": "B",
+      "coordinate_frame": "JACOBS_LOCAL"
+     }
+    ],
+    "steps": [
+     {
+      "instruction": "Proceed 10 m to Main Entrance",
+      "to_node": "F1_ENTRANCE_MAIN",
+      "waypoint": {
+       "x": 20.0,
+       "y": 0.0,
+       "z": 0.0,
+       "floor_id": "F1",
+       "coordinate_frame": "JACOBS_LOCAL"
+      },
+      "distance_m": 10.0,
+      "bearing_degrees": 0.0
+     },
+     {
+      "instruction": "Proceed 10 m to Center Corridor (F1)",
+      "to_node": "F1_CORRIDOR_CENTER",
+      "waypoint": {
+       "x": 20.0,
+       "y": 10.0,
+       "z": 0.0,
+       "floor_id": "F1",
+       "coordinate_frame": "JACOBS_LOCAL"
+      },
+      "distance_m": 10.0,
+      "bearing_degrees": 0.0
+     },
+     {
+      "instruction": "Proceed 8 m to East Corridor (F1)",
+      "to_node": "F1_CORRIDOR_EAST",
+      "waypoint": {
+       "x": 28.0,
+       "y": 10.0,
+       "z": 0.0,
+       "floor_id": "F1",
+       "coordinate_frame": "JACOBS_LOCAL"
+      },
+      "distance_m": 8.0,
+      "bearing_degrees": 90.0
+     },
+     {
+      "instruction": "Proceed 7 m to East Stairwell (F1)",
+      "to_node": "F1_STAIR_B",
+      "waypoint": {
+       "x": 35.0,
+       "y": 10.0,
+       "z": 0.0,
+       "floor_id": "F1",
+       "coordinate_frame": "JACOBS_LOCAL"
+      },
+      "distance_m": 7.0,
+      "bearing_degrees": 90.0
+     },
+     {
+      "instruction": "Take stairs down to East Stairwell (B)",
+      "to_node": "B_STAIR_B",
+      "waypoint": {
+       "x": 35.0,
+       "y": 10.0,
+       "z": -4.0,
+       "floor_id": "B",
+       "coordinate_frame": "JACOBS_LOCAL"
+      },
+      "distance_m": 4.0,
+      "bearing_degrees": 0.0
+     },
+     {
+      "instruction": "Proceed 7 m to East Corridor (B)",
+      "to_node": "B_CORRIDOR_EAST",
+      "waypoint": {
+       "x": 28.0,
+       "y": 10.0,
+       "z": -4.0,
+       "floor_id": "B",
+       "coordinate_frame": "JACOBS_LOCAL"
+      },
+      "distance_m": 7.0,
+      "bearing_degrees": 270.0
+     },
+     {
+      "instruction": "Proceed 6 m to Metal Shop",
+      "to_node": "B_METAL_SHOP",
+      "waypoint": {
+       "x": 28.0,
+       "y": 16.0,
+       "z": -4.0,
+       "floor_id": "B",
+       "coordinate_frame": "JACOBS_LOCAL"
+      },
+      "distance_m": 6.0,
+      "bearing_degrees": 0.0
+     }
+    ],
+    "total_distance_m": 52.0,
+    "total_cost": 192.4,
+    "hazards_considered": [
+     "HAZ_001",
+     "HAZ_002"
+    ],
+    "assumptions": [
+     "Illustrative simulated building geometry",
+     "Graph cost is not a safety guarantee; command approval required"
+    ],
+    "requires_command_approval": true,
+    "unreachable_reason": null,
+    "alternate": {
+     "route_id": "RESCUE_UNIT_BRAVO_ALT",
+     "status": "candidate",
+     "start_node": "EXT_STAGING",
+     "destination_node": "B_METAL_SHOP",
+     "nodes": [
+      "EXT_STAGING",
+      "F1_ENTRANCE_MAIN",
+      "F1_CORRIDOR_CENTER",
+      "F1_CORRIDOR_WEST",
+      "F1_STAIR_A",
+      "B_STAIR_A",
+      "B_CORRIDOR_WEST",
+      "B_CORRIDOR_CENTER",
+      "B_CORRIDOR_EAST",
+      "B_METAL_SHOP"
+     ],
+     "edge_ids": [
+      "E039",
+      "E037",
+      "E007",
+      "E009",
+      "E028",
+      "E002",
+      "E000",
+      "E001",
+      "E006"
+     ],
+     "polyline": [
+      {
+       "x": 20.0,
+       "y": -10.0,
+       "z": 0.0,
+       "floor_id": "F1",
+       "coordinate_frame": "JACOBS_LOCAL"
+      },
+      {
+       "x": 20.0,
+       "y": 0.0,
+       "z": 0.0,
+       "floor_id": "F1",
+       "coordinate_frame": "JACOBS_LOCAL"
+      },
+      {
+       "x": 20.0,
+       "y": 10.0,
+       "z": 0.0,
+       "floor_id": "F1",
+       "coordinate_frame": "JACOBS_LOCAL"
+      },
+      {
+       "x": 12.0,
+       "y": 10.0,
+       "z": 0.0,
+       "floor_id": "F1",
+       "coordinate_frame": "JACOBS_LOCAL"
+      },
+      {
+       "x": 5.0,
+       "y": 10.0,
+       "z": 0.0,
+       "floor_id": "F1",
+       "coordinate_frame": "JACOBS_LOCAL"
+      },
+      {
+       "x": 5.0,
+       "y": 10.0,
+       "z": -4.0,
+       "floor_id": "B",
+       "coordinate_frame": "JACOBS_LOCAL"
+      },
+      {
+       "x": 12.0,
+       "y": 10.0,
+       "z": -4.0,
+       "floor_id": "B",
+       "coordinate_frame": "JACOBS_LOCAL"
+      },
+      {
+       "x": 20.0,
+       "y": 10.0,
+       "z": -4.0,
+       "floor_id": "B",
+       "coordinate_frame": "JACOBS_LOCAL"
+      },
+      {
+       "x": 28.0,
+       "y": 10.0,
+       "z": -4.0,
+       "floor_id": "B",
+       "coordinate_frame": "JACOBS_LOCAL"
+      },
+      {
+       "x": 28.0,
+       "y": 16.0,
+       "z": -4.0,
+       "floor_id": "B",
+       "coordinate_frame": "JACOBS_LOCAL"
+      }
+     ],
+     "steps": [
+      {
+       "instruction": "Proceed 10 m to Main Entrance",
+       "to_node": "F1_ENTRANCE_MAIN",
+       "waypoint": {
+        "x": 20.0,
+        "y": 0.0,
+        "z": 0.0,
+        "floor_id": "F1",
+        "coordinate_frame": "JACOBS_LOCAL"
+       },
+       "distance_m": 10.0,
+       "bearing_degrees": 0.0
+      },
+      {
+       "instruction": "Proceed 10 m to Center Corridor (F1)",
+       "to_node": "F1_CORRIDOR_CENTER",
+       "waypoint": {
+        "x": 20.0,
+        "y": 10.0,
+        "z": 0.0,
+        "floor_id": "F1",
+        "coordinate_frame": "JACOBS_LOCAL"
+       },
+       "distance_m": 10.0,
+       "bearing_degrees": 0.0
+      },
+      {
+       "instruction": "Proceed 8 m to West Corridor (F1)",
+       "to_node": "F1_CORRIDOR_WEST",
+       "waypoint": {
+        "x": 12.0,
+        "y": 10.0,
+        "z": 0.0,
+        "floor_id": "F1",
+        "coordinate_frame": "JACOBS_LOCAL"
+       },
+       "distance_m": 8.0,
+       "bearing_degrees": 270.0
+      },
+      {
+       "instruction": "Proceed 7 m to West Stairwell (F1)",
+       "to_node": "F1_STAIR_A",
+       "waypoint": {
+        "x": 5.0,
+        "y": 10.0,
+        "z": 0.0,
+        "floor_id": "F1",
+        "coordinate_frame": "JACOBS_LOCAL"
+       },
+       "distance_m": 7.0,
+       "bearing_degrees": 270.0
+      },
+      {
+       "instruction": "Take stairs down to West Stairwell (B)",
+       "to_node": "B_STAIR_A",
+       "waypoint": {
+        "x": 5.0,
+        "y": 10.0,
+        "z": -4.0,
+        "floor_id": "B",
+        "coordinate_frame": "JACOBS_LOCAL"
+       },
+       "distance_m": 4.0,
+       "bearing_degrees": 0.0
+      },
+      {
+       "instruction": "Proceed 7 m to West Corridor (B)",
+       "to_node": "B_CORRIDOR_WEST",
+       "waypoint": {
+        "x": 12.0,
+        "y": 10.0,
+        "z": -4.0,
+        "floor_id": "B",
+        "coordinate_frame": "JACOBS_LOCAL"
+       },
+       "distance_m": 7.0,
+       "bearing_degrees": 90.0
+      },
+      {
+       "instruction": "Proceed 8 m to Center Corridor (B)",
+       "to_node": "B_CORRIDOR_CENTER",
+       "waypoint": {
+        "x": 20.0,
+        "y": 10.0,
+        "z": -4.0,
+        "floor_id": "B",
+        "coordinate_frame": "JACOBS_LOCAL"
+       },
+       "distance_m": 8.0,
+       "bearing_degrees": 90.0
+      },
+      {
+       "instruction": "Proceed 8 m to East Corridor (B)",
+       "to_node": "B_CORRIDOR_EAST",
+       "waypoint": {
+        "x": 28.0,
+        "y": 10.0,
+        "z": -4.0,
+        "floor_id": "B",
+        "coordinate_frame": "JACOBS_LOCAL"
+       },
+       "distance_m": 8.0,
+       "bearing_degrees": 90.0
+      },
+      {
+       "instruction": "Proceed 6 m to Metal Shop",
+       "to_node": "B_METAL_SHOP",
+       "waypoint": {
+        "x": 28.0,
+        "y": 16.0,
+        "z": -4.0,
+        "floor_id": "B",
+        "coordinate_frame": "JACOBS_LOCAL"
+       },
+       "distance_m": 6.0,
+       "bearing_degrees": 0.0
+      }
+     ],
+     "total_distance_m": 68.0,
+     "total_cost": 199.8,
+     "hazards_considered": [
+      "HAZ_001",
+      "HAZ_002"
+     ],
+     "assumptions": [
+      "Illustrative simulated building geometry",
+      "Graph cost is not a safety guarantee; command approval required"
+     ],
+     "requires_command_approval": true,
+     "unreachable_reason": null,
+     "alternate": null
+    },
+    "meta": {
+     "responder_id": "UNIT_BRAVO",
+     "civilian_id": "CIV_002"
+    }
+   }
+  ],
+  "last_event_seq": 32
+ }
+}

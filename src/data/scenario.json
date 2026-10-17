@@ -1,0 +1,17 @@
+{
+  "defaultResidentId": "CIV_003",
+  "residents": [
+    { "text": "I'm in Studio 210 on the second floor. There's smoke outside and my friend can't walk." },
+    { "text": "We're trapped in the Metal Shop in the basement, three of us, there's fire by the door." },
+    { "text": "Studio 310, smoke is coming under the door." },
+    { "text": "Advanced Prototyping Lab, two people, we can't get out." },
+    { "text": "I'm in Studio 110 and I smell smoke." },
+    { "text": "Studio 120, I use a wheelchair." }
+  ],
+  "responders": [
+    { "id": "UNIT_ALPHA", "name": "Alpha", "node": "EXT_STAGING" },
+    { "id": "UNIT_BRAVO", "name": "Bravo", "node": "EXT_STAGING" }
+  ],
+  "ignite": ["F2_CORRIDOR_EAST"],
+  "hazards": [{ "type": "smoke", "node": "F3_CORRIDOR_CENTER" }]
+}
