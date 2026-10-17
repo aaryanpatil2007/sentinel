@@ -68,6 +68,6 @@ test('a restroom rescue makes the crew use the obstruction detour',()=>{
   s.tick(.1);const ff=s.firefighter;
   if(ff.next&&[ff.node,ff.next].every(id=>id.startsWith('b3-')))detour=true;
  }
- assert.ok(detour,'The rescue should use the clear-side lane around fallen shelving');
+ assert.ok(detour,'The rescue should use the clear-side lane around the fallen whiteboard');
  assert.equal(s.rescued,8);
 });

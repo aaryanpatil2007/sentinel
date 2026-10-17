@@ -7,7 +7,7 @@ const html = await readFile(resolve(root,'dist/index.html'),'utf8');
 if (!html.includes('type="importmap"')) throw new Error('Missing Three.js import map.');
 await writeFile(resolve(root,'dist/_headers'), '/vendor/*\n  Cache-Control: public, max-age=86400\n');
 const sources = {};
-for (const [id,path] of Object.entries({core:'vendor/three.core.js',three:'vendor/three.module.js',controls:'vendor/addons/controls/OrbitControls.js',labels:'vendor/addons/renderers/CSS2DRenderer.js',building:'src/building.js',simulation:'src/simulation.js',view:'src/building-view.js',main:'src/main.js'})) sources[id] = await readFile(resolve(root,path),'utf8');
+for (const [id,path] of Object.entries({core:'vendor/three.core.js',three:'vendor/three.module.js',controls:'vendor/addons/controls/OrbitControls.js',labels:'vendor/addons/renderers/CSS2DRenderer.js',building:'src/building.js',simulation:'src/simulation.js',furnishings:'src/furnishings.js',view:'src/building-view.js',main:'src/main.js'})) sources[id] = await readFile(resolve(root,path),'utf8');
 const css = await readFile(resolve(root,'src/style.css'),'utf8');
 const bootstrap = `
 const sources = ${JSON.stringify(sources).replaceAll('<','\\u003c')};
@@ -18,7 +18,8 @@ const controls = moduleUrl(sources.controls.replaceAll("'three'", JSON.stringify
 const labels = moduleUrl(sources.labels.replaceAll("'three'", JSON.stringify(three)));
 const building = moduleUrl(sources.building);
 const simulation = moduleUrl(sources.simulation.replaceAll("'./building.js'",JSON.stringify(building)));
-const view = moduleUrl(sources.view.replaceAll("'three'",JSON.stringify(three)).replaceAll("'three/addons/controls/OrbitControls.js'",JSON.stringify(controls)).replaceAll("'three/addons/renderers/CSS2DRenderer.js'",JSON.stringify(labels)).replaceAll("'./simulation.js'",JSON.stringify(simulation)).replaceAll("'./building.js'",JSON.stringify(building)));
+const furnishings = moduleUrl(sources.furnishings.replaceAll("'three'",JSON.stringify(three)));
+const view = moduleUrl(sources.view.replaceAll("'./furnishings.js'",JSON.stringify(furnishings)).replaceAll("'three'",JSON.stringify(three)).replaceAll("'three/addons/controls/OrbitControls.js'",JSON.stringify(controls)).replaceAll("'three/addons/renderers/CSS2DRenderer.js'",JSON.stringify(labels)).replaceAll("'./simulation.js'",JSON.stringify(simulation)).replaceAll("'./building.js'",JSON.stringify(building)));
 const main = moduleUrl(sources.main.replaceAll("'./simulation.js'",JSON.stringify(simulation)).replaceAll("'./building.js'",JSON.stringify(building)).replaceAll("'./building.js'",JSON.stringify(building)).replaceAll("'./building-view.js'",JSON.stringify(view)));
 await import(main);
 `;

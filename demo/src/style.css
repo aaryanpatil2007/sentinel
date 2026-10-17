@@ -126,3 +126,15 @@
 .guidance-content > .team-size-row select { width:135px; height:30px; font-size:11px; }
 .locked-room-label,.obstruction-label { background:#fff4df; color:#8a6024; border:1px solid #ddbd7a; border-radius:4px; padding:3px 5px; font-size:9px; font-weight:650; }
 @media (min-width:981px) and (max-height:740px) { .guidance-content > .team-size-row { margin-bottom:6px; padding-bottom:6px; } }
+
+/* Civilian severity is shared by the 3D bodies, badges, and priority queue. */
+.person-ping,.person-ping.urgent { background:var(--danger-color,#bc392e); color:var(--danger-ink,#fff); border:1px solid #ffffffd9; }
+.person-ping.target { box-shadow:0 0 0 3px var(--danger-bg,#f7d9d4),0 2px 5px #3e536b25; }
+.priority-row .queue-number { color:var(--danger-color); font-weight:700; }
+.priority-row .queue-risk { color:var(--danger-color); }
+.priority-row .queue-risk small { color:#768696; }
+.selected-person .detail-label { color:var(--danger-color); }
+.danger-legend { white-space:nowrap; }
+.danger-legend i { display:inline-block; width:52px; height:6px; border-radius:5px; background:linear-gradient(90deg,#248568,#b19e35 30%,#d0792e 58%,#bc392e 78%,#740e26); }
+.character-label strong { display:block; font-size:9px; font-weight:600; }
+.character-label small { display:block; margin-top:3px; font-size:7px; font-weight:400; color:#72878c; }

@@ -4,6 +4,9 @@ export const levelLabel = floor => floor === 0 ? 'Basement' : `Floor ${floor}`;
 export const UNIT_COLORS = ['#3475cd','#895bb2','#188c89'];
 export const SOURCES = {
   guide:'https://jacobsinstitute.berkeley.edu/our-spaces-at-a-glance/',
+  equipment:'https://jacobsinstitute.berkeley.edu/our-spaces-at-a-glance/labs-and-equipment/',
+  studios:'https://design.berkeley.edu/about-mdes/studio-facilities',
+  teaching:'https://jacobsinstitute.berkeley.edu/courses/for-instructors/jacobs-hall-instructor-guide/',
   entrances:'https://jacobsinstitute.berkeley.edu/connect/visit/',
   plans:LEVELS.map(f=>`https://jacobsinstitute.berkeley.edu/wp-content/uploads/2021/06/Floor-${f||'B'}-Fall-2021.png`),
 };
@@ -29,12 +32,67 @@ export const ROOMS = [
 // Incident props are fictional; the public diagrams do not specify locked doors or debris.
 export const BATHROOMS = LEVELS.map(floor=>({id:`WC${floor}`,floor,x:floor===1?-13.5:14,z:-4,w:4,d:5,label:'Restrooms',kind:'bathroom'}));
 export const LOCKED_ROOMS = new Set(['120A','210A','310A']);
-export const OBSTACLES = [
-  {id:'cart-2',floor:2,x:2.5,z:3,w:1.8,d:1.1,h:.9,label:'Overturned cart'},
-  {id:'debris-3',floor:3,x:-2.5,z:3,w:1.8,d:1.1,h:.65,label:'Fallen shelving'},
-  {id:'bench-0',floor:0,x:3,z:-5,w:3.4,d:1.3,h:.8,label:'Workbench'},
-  {id:'bench-1',floor:1,x:6,z:-5,w:3,d:1.3,h:.8,label:'Workbench'},
+// Equipment types are grounded in Berkeley's current equipment/space guides and
+// 2024 interior photographs. This is a selective arrangement, not an inventory survey.
+const furnishing=(id,room,kind,x,z,w,d,h=1,extra={})=>({id,room,kind,floor:ROOMS.find(r=>r.id===room).floor,x,z,w,d,h,...extra});
+export const FURNISHINGS = [
+  furnishing('omax','METAL','waterjet',-13,-7.1,3.6,2.5,1.25,{label:'OMAX waterjet'}),
+  furnishing('metal-saw','METAL','bandsaw',-14.7,-2.6,1.2,1.4,1.7),
+  furnishing('weld','METAL','welding',-11.4,-2.6,1.5,1.5,1.25),
+  ...[-7.2,-2.7].flatMap((x,i)=>[-5.5,-2].map((z,j)=>furnishing(`10c-bench-${i}-${j}`,'10C','workbench',x,z,2.2,2,1))),
+  furnishing('10c-board','10C','whiteboard',-5,-7.6,2.2,.6,1.5),
+  ...[1.6,8.3].flatMap((x,i)=>[-5.7,-2].map((z,j)=>furnishing(`10-bench-${i}-${j}`,'10','workbench',x,z,3.1,2.3,1))),
+  furnishing('10-screen','10','display',5,-7.8,3.6,.5,1.7),
+  furnishing('robot-bench','ROBOT','electronics',-5.8,8,3,1.8,1.15),
+  furnishing('video-kit','ROBOT','camera',5.8,8,1.5,1.5,1.8),
+  furnishing('shopbot','120','cnc',-6.7,-5.8,4.2,2.5,1.3,{label:'ShopBot · woodshop'}),
+  furnishing('sawstop','120','tableSaw',-2.5,-2,2.1,1.8,1.05),
+  furnishing('wood-saw','120','bandsaw',-8.2,-1.7,1.2,1.3,1.7),
+  furnishing('laser','110','laser',2.6,-6,3.3,1.8,1.3,{label:'Laser cutting'}),
+  furnishing('printer-bank','110','printerBank',7.6,-6,3.1,1.8,1.7),
+  furnishing('electronics','110','electronics',7.5,-1.8,2.5,1.8,1.2),
+  furnishing('lucy','110','robotArm',2.5,-2.2,1.7,1.8,1.8,{label:'Lucy + Ethel'}),
+  furnishing('ethel','110','robotArm',2.5,.1,1.7,1.6,1.8),
+  furnishing('soft-lab','110A','sewing',11.25,8.6,1.3,1.5,1.2),
+  furnishing('advising','103','desk',15.8,-5.5,1.6,2,1.2),
+  ...[-7.6,-2.4].flatMap((x,i)=>[-5.8,-2.4].map((z,j)=>furnishing(`220-bench-${i}-${j}`,'220','workbench',x,z,2.6,2.2,1))),
+  furnishing('220-board','220','whiteboard',-5,-7.8,3,.6,1.5),
+  ...[2.3,7.8].flatMap((x,i)=>[-5.8,-2].map((z,j)=>furnishing(`mdes-desk-${i}-${j}`,'210','desk',x,z,2.7,2.2,1.3))),
+  furnishing('mdes-lounge','210','lounge',7.7,.1,2.5,1.2,1),
+  furnishing('jps-printer','234','resinPrinter',-14.6,-5.5,1.4,1.8,1.7),
+  ...[-7.8,-2.6,2.6,7.8].flatMap((x,i)=>[-5.9,-2.7].map((z,j)=>furnishing(`310-table-${i}-${j}`,'310','teachingTable',x,z,3.1,2.2,1))),
+  furnishing('led-wall','310','display',0,-7.9,6.5,.5,1.7,{label:'310 · LED teaching wall'}),
+  furnishing('310-podium','310','podium',8.7,-7,1.3,1,1.25),
+  furnishing('310d-table','310D','meeting',-6.65,8.6,1.4,1.7,1),
+  furnishing('310b-table','310B','meeting',3.35,8.6,1.4,1.7,1),
+  furnishing('form-bank','APT','resinPrinter',-14.5,-5.8,1.5,1.7,1.7,{label:'332 · advanced printing'}),
+  furnishing('fortus','APT','enclosedPrinter',-11.3,-5.8,1.7,1.9,1.9),
+  furnishing('resin-bench','APT','resinPrinter',-14.5,-2.5,1.5,1.7,1.7),
 ];
+export const INCIDENT_PROPS = [
+  {id:'cart-2',room:'220',kind:'materialsCart',floor:2,x:2.5,z:3,w:1.8,d:1.1,h:.9,label:'Displaced materials cart'},
+  {id:'debris-3',room:'310',kind:'fallenWhiteboard',floor:3,x:-2.5,z:3,w:1.8,d:1.1,h:.65,label:'Fallen rolling whiteboard'},
+];
+export const OBSTACLES = [...FURNISHINGS,...INCIDENT_PROPS];
+export const ROOM_CHARACTER = {
+  METAL:'Waterjet + metal fabrication', '10C':'Workbench tables + stools', '10':'Teaching benches + AV',
+  ROBOT:'Electronics + video equipment', '120':'ShopBot + woodshop', '110':'Robotics + electronics + laser cutting',
+  '210':'MDes desks + pin-up space', '220':'Teaching benches + whiteboards', '310':'Teaching tables + LED wall',
+  APT:'332 · advanced 3D printing',
+};
+export const DANGER_STOPS = [
+  {at:0,color:'#248568'}, {at:.3,color:'#b19e35'}, {at:.58,color:'#d0792e'},
+  {at:.78,color:'#bc392e'}, {at:1,color:'#740e26'},
+];
+export function dangerAppearance(value){
+  const risk=Math.max(0,Math.min(1,Number.isFinite(value)?value:0));
+  const upper=DANGER_STOPS.findIndex(s=>s.at>=risk),a=DANGER_STOPS[Math.max(0,upper-1)],b=DANGER_STOPS[upper];
+  const t=a===b?0:(risk-a.at)/(b.at-a.at),rgb=hex=>[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16));
+  const channels=rgb(a.color).map((c,i)=>Math.round(c+(rgb(b.color)[i]-c)*t));
+  const hex=xs=>'#'+xs.map(c=>c.toString(16).padStart(2,'0')).join('');
+  const luminance=channels.map(c=>{const v=c/255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4;}).reduce((sum,c,i)=>sum+c*[.2126,.7152,.0722][i],0);
+  return {color:hex(channels),background:hex(channels.map(c=>Math.round(c*.1+255*.9))),ink:luminance>.179?'#000000':'#ffffff',label:risk>=.85?'Critical':risk>=.7?'Severe':risk>=.5?'High':risk>=.25?'Moderate':'Low'};
+}
 export const fireLobes = fire => [
   {x:fire.x,z:fire.z,radius:fire.radius},
   {x:fire.x+fire.radius*.68,z:fire.z+fire.radius*.28,radius:fire.radius*.67},
@@ -59,8 +117,10 @@ function floorSegment(a,b,floor){
   if(lo>hi)return null;
   const at=t=>({x:a.x+(b.x-a.x)*t,z:a.z+(b.z-a.z)*t});return [at(lo),at(hi)];
 }
-export function segmentClear(building,a,b,{civilian=false,clearance=civilian?1.15:.5,ignoreFire=false}={}){
-  for(const box of building.obstacles??OBSTACLES){const segment=floorSegment(a,b,box.floor);if(segment&&crossesBox(...segment,box,.5))return false;}
+// Flame clearance is wider for unescorted civilians. Solid furniture uses body
+// clearance independently, so a safe aisle is not treated as a heat exclusion zone.
+export function segmentClear(building,a,b,{civilian=false,clearance=civilian?1.15:.5,fixtureClearance=.5,ignoreFire=false}={}){
+  for(const box of building.obstacles??OBSTACLES){const segment=floorSegment(a,b,box.floor);if(segment&&crossesBox(...segment,box,fixtureClearance))return false;}
   if(ignoreFire)return true;
   for(const fire of building.fires??[]){
     const segment=floorSegment(a,b,fire.floor);if(!segment)continue;

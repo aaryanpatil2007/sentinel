@@ -39,7 +39,7 @@ export class RescueSimulation {
       {id:'prototype-fire',floor:3,x:-13,z:-5,radius:1.6},
     ];
     for(const [id,heat]of [['rMETAL',.90],['r120',.92],['r220',.86],['rAPT',.88]])this.building.nodes.get(id).heat=heat;
-    for(const p of this.people)Object.assign(this.building.nodes.get(p.node),{heat:.45,smoke:.75});
+    for(const [i,p]of this.people.entries())Object.assign(this.building.nodes.get(p.node),{heat:[.4,.5,.49,.57,.39,.46,.42,.37][i],smoke:[.72,.8,.78,.88,.7,.76,.74,.68][i]});
     Object.assign(this.building.nodes.get('rROBOT'),{heat:.5,smoke:.8});
     this.firefighters=Array.from({length:teamSize},(_,i)=>({id:i+1,color:UNIT_COLORS[i],node:'safe',next:null,progress:0,pickups:[],target:null,carrying:[],path:[],escapePath:[],handoff:null,phase:'ready',reversing:false,routeCost:0}));
     this.log(`${teamSize} firefighter${teamSize===1?'':'s'} ready. Eight occupants in immediate danger.`, 'warning');
@@ -64,7 +64,12 @@ export class RescueSimulation {
     }
     return clamp(n.heat*.6+n.smoke*.2+nearby*.7);
   }
-  urgency(person){return this.dangerAt(this.building.nodes.get(person.node));}
+  urgency(person){
+    if(person.status==='rescued')return 0;
+    const mover=person.status==='escorted'?this.firefighters.find(ff=>ff.id===person.unit)??person:person;
+    const a=this.building.nodes.get(mover.node),b=this.building.nodes.get(mover.next)??a,t=mover.progress??0;
+    return this.dangerAt({...this.position(mover),floor:t<.5?a.floor:b.floor,type:t<.5?a.type:b.type,heat:a.heat+(b.heat-a.heat)*t,smoke:a.smoke+(b.smoke-a.smoke)*t});
+  }
   safeForWalking(n){return n.heat<=.16&&n.smoke<=.22&&this.dangerAt(n)<=.28&&segmentClear(this.building,n,n,{civilian:true});}
   civilianRoutes(){
     const {nodes,adjacency}=this.building;

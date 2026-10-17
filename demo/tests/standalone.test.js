@@ -13,5 +13,6 @@ test('the single-file export retains complete runnable module sources',()=>{
   assert.equal(sources.core,readFileSync(new URL('vendor/three.core.js',root),'utf8'));
   assert.equal(sources.main,readFileSync(new URL('src/main.js',root),'utf8'));
   assert.equal(sources.simulation,readFileSync(new URL('src/simulation.js',root),'utf8'));
+  assert.equal(sources.furnishings,readFileSync(new URL('src/furnishings.js',root),'utf8'));
   assert.equal(sources.building,readFileSync(new URL('src/building.js',root),'utf8'));
 });

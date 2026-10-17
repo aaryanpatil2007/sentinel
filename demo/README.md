@@ -4,7 +4,7 @@ A standalone browser demo of UC Berkeley’s Jacobs Institute for Design Innovat
 
 ## Open the demo
 
-Open [`jacobs-demo.html`](jacobs-demo.html) directly in a browser. No installation, server, credentials, or backend is required. Choose a fire mode, select **1–3 firefighters** in the right panel (default: **1**), and press **Start rescue**. Click a crew card to follow that unit’s instructions and show its route. The desktop interface fits the browser viewport, with compact controls and an independently scrolling incident history. The overview uses spaced floors, compact person markers, and a small number of meaningful architectural details. Low translucent partitions have actual doorway gaps; restrooms, locked doors, workbenches, and corridor debris add context. Select a floor to reveal room and obstruction labels; Exterior shows the facade. Floor spacing is exaggerated for visibility and does not change rescue distances or timing.
+Open [`jacobs-demo.html`](jacobs-demo.html) directly in a browser. No installation, server, credentials, or backend is required. Choose a fire mode, select **1–3 firefighters** in the right panel (default: **1**), and press **Start rescue**. Click a crew card to follow that unit’s instructions and show its route. The desktop interface fits the browser viewport, with compact controls and an independently scrolling incident history. The overview uses spaced floors, compact person markers, and a small number of meaningful architectural details. Low translucent partitions have actual doorway gaps. A selective set of recognizable equipment adds room character: a gantry-style CNC router, a waterjet bed, saws, framed 3D printers, orange robot arms, electronics benches, pale wood workstations, mobile whiteboards, and the studio 310 teaching display. Restrooms, locked doors, and a displaced materials cart remain part of the incident. Select a floor to reveal room and obstruction labels; Exterior shows the facade. Floor spacing is exaggerated for visibility and does not change rescue distances or timing.
 
 For development with Node.js 22 or newer:
 
@@ -33,9 +33,22 @@ The model follows the room groupings and circulation topology in UC Berkeley’s
 
 The diagrams show west access at level 1 and east access at level 2; Berkeley’s [visit guide](https://jacobsinstitute.berkeley.edu/connect/visit/) identifies these as Etcheverry Plaza and LeRoy Avenue. This model uses those entrances and the two stair cores; it does not invent an exterior fire escape. It includes approximate room dimensions, simplified circulation waypoints, and illustrative outdoor assembly locations. The basement is exposed as a cutaway. Restroom geometry is schematic. Locked doors, debris, fire, smoke, blocked passages, and occupant locations are a fictional incident, not actual building conditions or a surveyed emergency plan.
 
+## Room character and research
+
+The room functions and equipment types follow Berkeley’s current [equipment guide](https://jacobsinstitute.berkeley.edu/our-spaces-at-a-glance/labs-and-equipment/), [teaching-space details](https://jacobsinstitute.berkeley.edu/our-spaces-at-a-glance/), [instructor guide](https://jacobsinstitute.berkeley.edu/courses/for-instructors/jacobs-hall-instructor-guide/), and [MDes interior photographs](https://design.berkeley.edu/about-mdes/studio-facilities). The latter show pale wood desks, blue chairs, pin-up/whiteboard space, and a pale blue wall palette. This model uses representative objects, reduced counts, and approximate placement to keep the rescue visible. It does not claim to reproduce the current furniture positions.
+
+- **Basement:** OMAX-style open waterjet bed and metal-shop equipment; studio 10/10C workbench tables and stools; a video tripod and electronics station in the robotics lab.
+- **Level 1:** the ShopBot/woodshop in 120; laser cutting, printer frames, electronics stations, and the KUKA-inspired orange Lucy/Ethel robot arms in 110; a sewing station in a small equipment room.
+- **Level 2:** individual MDes desks and seating in 210; teaching benches and a mobile whiteboard in 220. A displaced prototyping-materials cart creates a circulation detour.
+- **Level 3:** open teaching tables and the large LED teaching display in 310; breakout meeting tables; amber resin-printer enclosures and an industrial printer in the adjacent advanced prototyping lab (332). A fallen rolling whiteboard blocks part of the passage.
+
+The cart and fallen whiteboard are fictional incident conditions. All furniture collision footprints feed the same planner and movement checks as other obstructions. The low-poly objects use legs, rails, gantries, wheels, stools, screens, and articulated silhouettes instead of generic solid blocks.
+
 ## Rescue rules
 
 All eight occupants, including one in the top-floor restroom, start in immediate heat/smoke danger; low-risk bystanders are excluded from dispatch. Each firefighter can escort up to two people. The selected crew count runs simultaneously with separate colors, routes, pickup assignments, escort counts, and instructions.
+
+Civilian bodies, numbered map badges, and rescue-priority labels share a live green → yellow → orange → red → dark-red danger scale. Text labels (Low, Moderate, High, Severe, Critical) accompany the colors; badge text switches between black and white for contrast. Initial occupants remain urgent but have varied heat/smoke exposure. Escorted civilians are colored using the firefighter’s current location; independent walkers use their own interpolated location. Colors can improve as people approach safety.
 
 The planner generates feasible single- and ordered two-person pickup jobs, including a route to a safe handoff. A bitmask dynamic program selects the maximum-scoring set of non-overlapping jobs across the active crews. Scores combine immediate danger, travel effort, time to pickup, and reassignment cost. Pairing has a bounded detour; a critical existing escort sharply limits extra pickups. This optimizes the generated assignment choices, not every possible future fire evolution or human behavior.
 
@@ -47,8 +60,9 @@ Spreading mode recalculates team plans every simulated second. Its illustrative 
 
 ## Source
 
-- `src/building.js`: Jacobs zones, graph, source references, level labels.
+- `src/building.js`: Jacobs zones, graph, researched furnishing placements, source references, shared danger palette.
 - `src/simulation.js`: hazards, safe handoffs, crew assignment, movement, autonomous evacuation.
+- `src/furnishings.js`: recognizable low-poly room equipment and furniture.
 - `src/building-view.js`: Three.js building, per-crew routes, occupant markers, camera controls.
 - `src/main.js` and `src/style.css`: controls and per-unit guidance.
 - `scripts/` and `tests/`: static server, standalone exporter, regression tests.
