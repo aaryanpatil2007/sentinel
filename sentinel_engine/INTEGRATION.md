@@ -34,9 +34,16 @@ Every position object is `{x, y, z, floor_id, coordinate_frame}`.
 
 - **REAL:** graph algorithms (Dijkstra), triage rules, the trained surrogate
   model and its validation methodology.
-- **SIMULATED (labeled in payloads):** all building geometry
-  (`provenance: "simulated"` — floor count/room naming informed by public Jacobs
-  Institute descriptions, coordinates illustrative); camera observations
+- **VERIFIED building facts** (public sources): 3 stories + basement; two main
+  F1 entrances; room names — Studios 10/110/120/210/220/310, Metal Shop,
+  Advanced Prototyping Lab (official Jacobs Institute spaces page); ~41 m
+  east-west × ~24 m footprint at 2530 Ridge Rd (OpenStreetMap way 440146220);
+  54-ft-wide bar on an east-west axis, 14-ft ceilings, LEED Platinum, Leddy
+  Maytum Stacy Architects, opened 2015.
+- **SIMULATED (labeled in payloads):** all coordinates, corridor layout, and
+  stair/entrance placement (`provenance: "simulated"` — no public floor plans
+  exist; our 40×20 m grid and 4.0 m floor spacing are illustrative but close to
+  the real footprint and 14-ft ceilings); camera observations
   (`source: "simulated_camera"` — stand-in for a CV layer); fire-spread dynamics
   (plausible-physics graph simulator, **not** real fire behavior).
 - **Spread surrogate:** `GradientBoostingClassifier` trained ONLY on randomized
@@ -121,7 +128,7 @@ GET /responders/UNIT_ALPHA/guidance
 GET /spread/prediction
 → {"fire_nodes": ["F2_CORRIDOR_EAST"], "horizon_minutes": 10,
    "method": "surrogate_ml_simulated", "provenance": "simulated",
-   "risk": {"F2_CORRIDOR_EAST": 1.0, "F2_CORRIDOR_CENTER": 0.9894, "B_MAKERSPACE": 0.0279, "...": 0.0}}
+   "risk": {"F2_CORRIDOR_EAST": 1.0, "F2_CORRIDOR_CENTER": 0.9894, "B_STUDIO_10": 0.0279, "...": 0.0}}
 ```
 `risk` is per-node ignition probability over the horizon; color nodes/regions by
 it. Demo control: `POST /spread/ignite {"node_id": "F2_CORRIDOR_EAST"}`.

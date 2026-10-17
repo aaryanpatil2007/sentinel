@@ -32,7 +32,7 @@ def test_surrogate_checkpoint_exists_and_predicts():
     risk = sp.predict(building, {"F2_CORRIDOR_EAST"})
     assert set(risk) == set(building.nodes)
     assert all(0.0 <= v <= 1.0 for v in risk.values())
-    assert risk["F2_CORRIDOR_CENTER"] > risk["B_MAKERSPACE"]
+    assert risk["F2_CORRIDOR_CENTER"] > risk["B_STUDIO_10"]
 
 
 def test_surrogate_agrees_with_monte_carlo_on_heldout_jacobs():

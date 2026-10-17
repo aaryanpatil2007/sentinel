@@ -17,11 +17,13 @@ FLOORS = [
     {"floor_id": "F3", "name": "Floor 3", "elevation_m": 8.0},
 ]
 
+# Room names verified against the official Jacobs Institute "our spaces at a
+# glance" page (jacobsinstitute.berkeley.edu). Positions remain illustrative.
 ROOMS = {  # floor -> [(suffix, label, x, y)]
-    "B": [("MAKERSPACE", "Basement Makerspace", 12, 16), ("WOODSHOP", "Wood Shop", 28, 16)],
-    "F1": [("DESIGN_SHOWCASE", "Design Showcase", 12, 16), ("ELECTRONICS_LAB", "Electronics Lab", 28, 16)],
+    "B": [("STUDIO_10", "Studio 10", 12, 16), ("METAL_SHOP", "Metal Shop", 28, 16)],
+    "F1": [("STUDIO_110", "Studio 110", 12, 16), ("STUDIO_120", "Studio 120", 28, 16)],
     "F2": [("STUDIO_210", "Studio 210", 12, 16), ("STUDIO_220", "Studio 220", 28, 16)],
-    "F3": [("STUDIO_310", "Studio 310", 12, 16), ("STUDIO_320", "Studio 320", 28, 16)],
+    "F3": [("STUDIO_310", "Studio 310", 12, 16), ("PROTOTYPING_LAB", "Advanced Prototyping Lab", 28, 16)],
 }
 
 
@@ -76,8 +78,11 @@ def build_jacobs_hall() -> dict:
         "coordinate_frame": "JACOBS_LOCAL",
         "origin_description": "Illustrative southwest ground-floor corner; x east, y north, z up, meters.",
         "provenance": "simulated",
-        "source_note": ("Floor count and room naming style informed by the public Jacobs Institute "
-                        "space descriptions; all coordinates and connections are illustrative."),
+        "source_note": ("Verified from public sources: 3 stories + basement, two main F1 entrances, "
+                        "room names (Studios 10/110/120/210/220/310, Metal Shop, Advanced Prototyping "
+                        "Lab) per the official Jacobs Institute spaces page; ~41m x ~24m footprint on "
+                        "an east-west axis per OpenStreetMap (way 440146220, 2530 Ridge Rd). "
+                        "All coordinates, corridor layout, and stair/entrance placement are illustrative."),
         "floors": FLOORS,
         "nodes": nodes,
         "edges": edges,
