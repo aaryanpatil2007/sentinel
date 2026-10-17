@@ -62,13 +62,13 @@ test('an off-path fire leaves the clear part of a room reachable',()=>{
  const route=shortestPath(b,'c0-2','r10C');assert.ok(route);
  for(let i=1;i<route.path.length;i++)assert.ok(segmentClear(b,b.nodes.get(route.path[i-1]),b.nodes.get(route.path[i])));
 });
-test('the upper rescue uses a lower-floor cart detour after fire splits the corridor',()=>{
+test('the upper rescue uses the connecting studio doorway to bypass the left fire',()=>{
  const s=new RescueSimulation('fixed',1);assert.ok(s.people.some(p=>p.room==='WC3'));
  s.running=true;let detour=false;
  for(let i=0;i<4000&&s.running;i++){
   s.tick(.1);const ff=s.firefighter;
-  if(ff.next&&new Set([ff.node,ff.next]).has('b2-3')&&new Set([ff.node,ff.next]).has('b2-4'))detour=true;
+  if(ff.next&&new Set([ff.node,ff.next]).has('rAPT')&&new Set([ff.node,ff.next]).has('apt-studio-door'))detour=true;
  }
- assert.ok(detour,'The rescue should use the clear-side lane around the materials cart');
+ assert.ok(detour,'The rescue should use the new same-floor doorway');
  assert.equal(s.rescued,8);
 });

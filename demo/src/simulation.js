@@ -1,4 +1,4 @@
-import { createBuilding, FLOOR_HEIGHT, key, UNIT_COLORS, segmentClear, edgeClear, FORCE_ENTRY_SECONDS } from './building.js';
+import { createBuilding, FLOOR_HEIGHT, key, UNIT_COLORS, segmentClear, edgeClear, FORCE_ENTRY_SECONDS, fireLobes } from './building.js';
 export { createBuilding, FLOOR_HEIGHT, key };
 export const BLOCK_HEAT = .79;
 export const DANGER_THRESHOLD = .58;
@@ -17,8 +17,8 @@ export function shortestPath(building,start,goal,options={}) {
     }
     for(const {id,edge}of adjacency.get(current)){
       const n=nodes.get(id),from=nodes.get(current);
-      if(!options.ignoreHazards&&(!edgeClear(building,current,id,{allowForcedEntry:!!options.allowForcedEntry})||n.heat>=BLOCK_HEAT||(from.heat>=BLOCK_HEAT&&current!==start)))continue;
-      const cost=dist.get(current)+edge.length*(options.ignoreHazards?1:1+n.heat*7+n.smoke*2.2)+(edge.locked&&options.allowForcedEntry?FORCE_ENTRY_SECONDS*3.4:0);
+      if(!options.ignoreHazards&&(!edgeClear(building,current,id,{allowForcedEntry:!!options.allowForcedEntry,ignoreHeat:!!options.ignoreHeat})||(!options.ignoreHeat&&(n.heat>=BLOCK_HEAT||(from.heat>=BLOCK_HEAT&&current!==start)))))continue;
+      const cost=dist.get(current)+edge.length*(options.ignoreHazards||options.distanceOnly?1:1+n.heat*7+n.smoke*2.2)+(edge.locked&&options.allowForcedEntry?FORCE_ENTRY_SECONDS*3.4:0);
       if(cost<(dist.get(id)??Infinity)){dist.set(id,cost);previous.set(id,current);open.add(id);}
     }
   }
@@ -26,32 +26,37 @@ export function shortestPath(building,start,goal,options={}) {
 }
 
 export class RescueSimulation {
-  constructor(mode='fixed',teamSize=1){this.reset(mode,teamSize);}
-  reset(mode=this.mode,teamSize=this.teamSize??1){
+  constructor(mode='fixed',teamSize=1,strategy='urgent'){this.reset(mode,teamSize,strategy);}
+  reset(mode=this.mode,teamSize=this.teamSize??1,strategy=this.strategy??'urgent'){
     if(!Number.isInteger(teamSize)||teamSize<1||teamSize>3)throw new RangeError('Choose 1–3 firefighters.');
-    this.mode=mode;this.teamSize=teamSize;this.building=createBuilding();this.time=0;this.running=false;
-    this.events=[];this.handoffs=[];this.replans=0;this.lastPlan=-Infinity;this.spreadAccumulator=0;this.finished=false;this.rescuePointCount=0;this.containmentStarted=false;
+    if(!['urgent','distance'].includes(strategy))throw new RangeError('Choose urgency or distance first.');
+    this.strategy=strategy;this.mode=mode;this.teamSize=teamSize;this.building=createBuilding();this.time=0;this.running=false;
+    this.events=[];this.handoffs=[];this.replans=0;this.lastPlan=-Infinity;this.spreadAccumulator=0;this.finished=false;this.rescuePointCount=0;this.containmentStarted=false;this.responseDelay=0;this.shortcutClosed=false;this.rescueDeadlines=new Map();this.forecastCache=new Map();
     this.people=['10C','ROBOT','120B','120C','220A','220B','310D','WC3'].map((room,i)=>({id:i+1,node:`r${room}`,room,status:'waiting',needsRescue:true,unit:null,next:null,progress:0,path:[],releasedAt:null}));
     this.building.fires=[
       {id:'metal-fire',floor:0,x:-13,z:-5,radius:1.65},
+      {id:'basement-passage-fire',floor:0,x:-2.5,z:3,radius:.8,growthRate:.04,spreadUntil:140,maxGrowth:2.6},
+      {id:'basement-side-fire',floor:0,x:-2.5,z:4.7,radius:.7,growthRate:.035,spreadUntil:140,maxGrowth:2.6},
       {id:'maker-fire',floor:1,x:5,z:3.5,radius:1.3},
       {id:'mdes-fire',floor:2,x:-5,z:-2,radius:1.5},
-      {id:'prototype-fire',floor:3,x:0,z:3.5,radius:1.3},
+      {id:'prototype-fire',floor:3,x:-12.5,z:3.5,radius:1.3,growthStart:70,growthRate:.05,spreadUntil:180,maxGrowth:4.1},
     ];
     for(const fire of this.building.fires)fire.initialRadius=fire.radius;
-    for(const [id,heat]of [['rMETAL',.90],['c1-4',.92],['r220',.86],['c3-3',.88]])this.building.nodes.get(id).heat=heat;
+    for(const [id,heat]of [['rMETAL',.90],['c1-4',.92],['r220',.86],['c3-0',.88]])this.building.nodes.get(id).heat=heat;
     for(const [i,p]of this.people.entries())Object.assign(this.building.nodes.get(p.node),{heat:[.4,.5,.49,.57,.39,.46,.42,.37][i],smoke:[.72,.8,.78,.88,.7,.76,.74,.68][i]});
     Object.assign(this.building.nodes.get('rROBOT'),{heat:.5,smoke:.8});
-    this.firefighters=Array.from({length:teamSize},(_,i)=>({id:i+1,color:UNIT_COLORS[i],node:'safe',next:null,progress:0,pickups:[],target:null,carrying:[],path:[],escapePath:[],handoff:null,phase:'ready',action:null,reversing:false,routeCost:0}));
+    this.firefighters=Array.from({length:teamSize},(_,i)=>({id:i+1,color:UNIT_COLORS[i],node:'safe-east',next:null,progress:0,pickups:[],target:null,carrying:[],path:[],escapePath:[],handoff:null,phase:'ready',action:null,reversing:false,routeCost:0}));
     this.log(`${teamSize} firefighter${teamSize===1?'':'s'} ready. Eight occupants in immediate danger.`, 'warning');
-    this.log('West stair 1–2 and a basement passage are blocked.', 'warning');
+    this.log('West stair 1–2 is blocked. Flames cut both central basement passages.', 'warning');
+    if(mode==='spread')this.log('Basement rescue window is closing: recover the two occupants before fire reaches their short doorways.','warning');
     this.plan(true);
   }
   get firefighter(){return this.firefighters[0];}
   get rescued(){return this.people.filter(p=>p.status==='rescued').length;}
   get walking(){return this.people.filter(p=>p.status==='walking').length;}
   get complete(){return this.rescued===this.people.length;}
-  get phase(){return this.complete?'complete':this.firefighters.every(f=>['holding','standby'].includes(f.phase))&&!this.walking?'holding':'active';}
+  get cutOffPeople(){return this.people.filter(p=>['waiting','stranded'].includes(p.status)&&!shortestPath(this.building,p.node,GOALS,{allowForcedEntry:true,ignoreHeat:true}));}
+  get phase(){return this.complete?'complete':this.finished?'cutoff':this.firefighters.every(f=>['holding','standby'].includes(f.phase))&&!this.walking?'holding':'active';}
   get fireCount(){return this.building.fires.length;}
   get blockedCount(){return [...this.building.edges.values()].filter(e=>!edgeClear(this.building,e.a,e.b)).length;}
   log(message,type='info'){this.events.unshift({time:this.time,message,type});this.events=this.events.slice(0,60);}
@@ -63,6 +68,10 @@ export class RescueSimulation {
       if(m.floor===n.floor)nearby=Math.max(nearby,m.heat*Math.max(0,1-d/17));
       if(m.floor===n.floor-1&&d<6)nearby=Math.max(nearby,m.heat*.55);
     }
+    for(const fire of this.building.fires)if(fire.floor===n.floor){
+      const gap=Math.min(...fireLobes(fire).map(l=>Math.hypot(n.x-l.x,n.z-l.z)-l.radius));
+      if(gap<=0)return 1;nearby=Math.max(nearby,.85*Math.max(0,1-gap/8));
+    }
     return clamp(n.heat*.6+n.smoke*.2+nearby*.7);
   }
   urgency(person){
@@ -70,6 +79,48 @@ export class RescueSimulation {
     const mover=person.status==='escorted'?this.firefighters.find(ff=>ff.id===person.unit)??person:person;
     const a=this.building.nodes.get(mover.node),b=this.building.nodes.get(mover.next)??a,t=mover.progress??0;
     return this.dangerAt({...this.position(mover),floor:t<.5?a.floor:b.floor,type:t<.5?a.type:b.type,heat:a.heat+(b.heat-a.heat)*t,smoke:a.smoke+(b.smoke-a.smoke)*t});
+  }
+  projectedRadius(fire,seconds,atTime=this.time){
+    const growing=Math.max(0,Math.min(atTime+seconds,fire.spreadUntil??30)-Math.max(atTime,fire.growthStart??0));
+    const controlled=Math.max(0,atTime+seconds-Math.max(atTime,fire.spreadUntil??30));
+    return Math.min(fire.initialRadius+(fire.maxGrowth??2.15),fire.radius+growing*(fire.growthRate??.065)+controlled*.004);
+  }
+  // Forecast geometric closure of the occupant’s currently shortest escape. This
+  // makes the rescue window part of triage, without assigning a floor-specific score.
+  routeClosesIn(path){
+    if(this.mode!=='spread'||!path)return Infinity;
+    const stamp=`${this.time}|${this.building.hazardVersion}`;
+    if(this.forecastStamp!==stamp){this.forecastCache.clear();this.forecastStamp=stamp;}
+    let soonest=Infinity;
+    for(let i=1;i<path.length;i++){
+      const a=this.building.nodes.get(path[i-1]),b=this.building.nodes.get(path[i]),id=key(a.id,b.id);
+      if(!this.forecastCache.has(id)){
+        const clear=seconds=>segmentClear({fires:this.building.fires.map(f=>({...f,radius:this.projectedRadius(f,seconds)})),obstacles:[]},a,b);
+        let deadline=Infinity;
+        if(!clear(180)){let low=0,high=180;for(let j=0;j<9;j++){const middle=(low+high)/2;if(clear(middle))low=middle;else high=middle;}deadline=high;}
+        this.forecastCache.set(id,deadline);
+      }
+      soonest=Math.min(soonest,this.forecastCache.get(id));
+    }
+    return soonest;
+  }
+  rescueClosesIn(escape,destination,goals){
+    if(this.mode!=='spread'||!escape)return Infinity;
+    if(!Number.isFinite(this.routeClosesIn(escape.path)))return Infinity;
+    const worsens=seconds=>{
+      const forecast={...this.building,fires:this.building.fires.map(f=>({...f,radius:this.projectedRadius(f,seconds)}))};
+      const route=shortestPath(forecast,destination,goals,{allowForcedEntry:true});
+      return !route||route.cost>escape.cost+8;
+    };
+    // Skip harmless lane changes; find the first substantial detour/forced entry.
+    if(!worsens(180))return Infinity;
+    let low=0,high=180;for(let i=0;i<8;i++){const middle=(low+high)/2;if(worsens(middle))high=middle;else low=middle;}return high;
+  }
+  deadlineBonus(closesIn){return Number.isFinite(closesIn)?Math.max(0,1-closesIn/180)*400:0;}
+  delayResponse(seconds=60){
+    if(this.mode!=='spread'||this.running||this.time!==0||!Number.isFinite(seconds)||seconds<=0||seconds>120)return;
+    for(let elapsed=0;elapsed<seconds;){const dt=Math.min(.5,seconds-elapsed);this.time+=dt;this.spread(dt);elapsed+=dt;}
+    this.responseDelay=seconds;this.log(`Response delayed ${seconds} seconds. Fire advanced while crews waited outside.`,'warning');this.plan();
   }
   safeForWalking(n){return n.heat<=.16&&n.smoke<=.22&&this.dangerAt(n)<=.28&&segmentClear(this.building,n,n,{civilian:true});}
   civilianRoutes(){
@@ -91,7 +142,7 @@ export class RescueSimulation {
     }
     return routes;
   }
-  crewPath(a,b){return shortestPath(this.building,a,b,{allowForcedEntry:true});}
+  crewPath(a,b){return shortestPath(this.building,a,b,{allowForcedEntry:true,distanceOnly:this.strategy==='distance'});}
   candidates(unit=null){
     const units=unit?[unit]:this.firefighters;
     const safe=this.safeRoutes??this.civilianRoutes(),goals=new Set([...safe.keys()].filter(id=>this.building.nodes.get(id).type!=='room'));
@@ -99,8 +150,9 @@ export class RescueSimulation {
       const approaches=units.map(ff=>({unit:ff.id,route:this.crewPath(ff.next??ff.node,person.node)})).filter(a=>a.route).sort((a,b)=>a.route.cost-b.route.cost);
       const approach=approaches[0]?.route??null,escape=this.crewPath(person.node,goals),urgency=this.urgency(person);
       const owner=this.firefighters.find(ff=>ff.pickups.includes(person.id));
-      const score=approach&&escape?urgency*140-(approach.cost+escape.cost)*.35:-Infinity;
-      return {person,approach,escape,urgency,score,unit:owner?.id??null};
+      const closesIn=Math.min(this.rescueClosesIn(escape,person.node,goals),Math.max(0,(this.rescueDeadlines.get(person.id)??Infinity)-this.time));
+      const score=approach&&escape?this.strategy==='distance'?-(approach.cost+escape.cost):urgency*140+this.deadlineBonus(closesIn)-(approach.cost+escape.cost)*.35:-Infinity;
+      return {person,approach,escape,urgency,closesIn,score,unit:owner?.id??null};
     }).sort((a,b)=>b.score-a.score||a.person.id-b.person.id);
   }
   plan(initial=false){
@@ -110,6 +162,12 @@ export class RescueSimulation {
     const cache=new Map(),releaseCache=new Map();
     const travel=(a,b)=>{const k=`${a}|${b}`;if(!cache.has(k))cache.set(k,this.crewPath(a,b));return cache.get(k);};
     const release=a=>{if(!releaseCache.has(a))releaseCache.set(a,this.crewPath(a,handoffGoals));return releaseCache.get(a);};
+    const deadlines=new Map(waiting.map(p=>{
+      const window=this.rescueClosesIn(release(p.node),p.node,handoffGoals);
+      // Losing a shortcut does not erase the unfinished urgent rescue that it threatened.
+      const deadline=Math.min(this.rescueDeadlines.get(p.id)??Infinity,this.time+window);
+      this.rescueDeadlines.set(p.id,deadline);return [p.id,Math.max(0,deadline-this.time)];
+    }));
     const options=this.firefighters.map(ff=>{
       const origin=ff.next??ff.node,direct=release(origin);
       if(ff.action){
@@ -122,20 +180,25 @@ export class RescueSimulation {
         let cursor=origin,cost=0,penalty=0,path=[origin],mask=0;
         for(const id of pickups){
           const p=this.people.find(p=>p.id===id),route=travel(cursor,p.node);if(!route)return;
-          if(pickups.length===2&&cursor!==origin&&route.cost>55)return;
+          if(pickups.length===2&&cursor!==origin){
+            const detour=route.path.slice(1).reduce((sum,id,i)=>{const edge=this.building.edges.get(key(route.path[i],id));return sum+edge.length+(edge.locked?FORCE_ENTRY_SECONDS*3.4:0);},0);
+            if(detour>55)return;
+          }
           path.push(...route.path.slice(1));cost+=route.cost;
-          penalty+=this.urgency(p)*(cost/3.4)*.7;mask|=1<<(p.id-1);cursor=p.node;
+          penalty+=this.urgency(p)*(cost/3.4)*.7;
+          const deadline=deadlines.get(p.id);if(Number.isFinite(deadline)&&deadline>0)penalty+=Math.max(0,cost/3.4+8-deadline)*4;mask|=1<<(p.id-1);cursor=p.node;
         }
         const exit=release(cursor);if(!exit)return;
         cost+=exit.cost;
         if(ff.carrying.length&&pickups.length){
           const critical=ff.carrying.some(id=>this.urgency(this.people.find(p=>p.id===id))>.9);
-          if(!direct||cost-direct.cost>(critical?6:45))return;
+          const continuing=pickups.every(id=>ff.pickups.includes(id));
+          if(!direct||(!continuing&&cost-direct.cost>(critical?6:45)))return;
         }
         path.push(...exit.path.slice(1));
         const switching=ff.pickups.length&&!pickups.includes(ff.pickups[0])?16:0;
-        const value=pickups.reduce((sum,id)=>sum+90+this.urgency(this.people.find(p=>p.id===id))*110,0);
-        jobs.push({pickups,path,cost,mask,handoff:path.at(-1),escapePath:exit.path,score:value-cost*.75-penalty-switching});
+        const value=pickups.reduce((sum,id)=>sum+90+this.urgency(this.people.find(p=>p.id===id))*110+this.deadlineBonus(deadlines.get(id)),0);
+        jobs.push({pickups,path,cost,mask,handoff:path.at(-1),escapePath:exit.path,score:this.strategy==='distance'?-cost-switching:value-cost*.75-penalty-switching});
       };
       if(ff.carrying.length)addJob([]);
       else {
@@ -185,9 +248,10 @@ export class RescueSimulation {
     // Continuous fuel-front growth. Three overlapping lobes create local, irregular
     // footprints; the room is never painted as uniformly burning.
     if(!this.containmentStarted&&this.time>=30){
-      this.containmentStarted=true;this.log('Sprinklers control the fire fronts. Ventilation begins clearing protected passages.','success');this.lastPlan=-Infinity;
+      this.containmentStarted=true;this.log('Sprinklers limit the middle floors. Basement and upper-floor rescue windows remain at risk.','success');this.lastPlan=-Infinity;
     }
-    for(const fire of this.building.fires)fire.radius=Math.min(fire.initialRadius+2.15,fire.radius+dt*(this.containmentStarted?.004:.065));
+    for(const fire of this.building.fires)fire.radius=this.projectedRadius(fire,dt,this.time-dt);
+    if(!this.shortcutClosed&&!segmentClear(this.building,nodes.get('d10C'),nodes.get('c0-2'))){this.shortcutClosed=true;this.log('Basement shortcut closed by fire. Use the longer workshop-side doorway.','danger');this.lastPlan=-Infinity;}
     this.building.hazardVersion++;
     for(const n of nodes.values()){
       if(['safe','exit','rescue'].includes(n.type))continue;
@@ -202,7 +266,7 @@ export class RescueSimulation {
       if(n.type==='room')for(const below of nodes.values())if(below.type==='room'&&below.floor===n.floor-1&&below.heat>.65&&Math.hypot(n.x-below.x,n.z-below.z)<5){
         heatIn=Math.max(heatIn,(below.heat-n.heat)*.3);smokeIn=Math.max(smokeIn,(below.heat-n.smoke)*.8);
       }
-      const source=['rMETAL','c1-4','r220','c3-3'].includes(n.id);
+      const source=['rMETAL','c1-4','r220','c3-0'].includes(n.id);
       const growth=n.heat>(n.type==='room'?.42:.6)?.003+n.heat*.007:0;
       const cooling=this.containmentStarted&&!source?n.heat*.032:0,venting=this.containmentStarted?n.smoke*.022:0;
       const heatGrowth=this.containmentStarted?0:growth;
@@ -311,6 +375,10 @@ export class RescueSimulation {
       person.path=safe.path.slice(1);person.next=person.path.shift()??null;person.progress=0;
     }
     if(changed)this.plan();
+    if(!this.complete&&this.firefighters.every(ff=>!ff.next&&GOALS.has(ff.node))){
+      const cutOff=this.cutOffPeople;
+      if(cutOff.length&&this.rescued+cutOff.length===this.people.length){this.running=false;this.finished=true;this.log(`${this.rescued} safely outside; ${cutOff.length} occupants cut off by growing fire. Earlier rescue windows were missed.`,'danger');}
+    }
     if(this.complete){this.running=false;for(const ff of this.firefighters)ff.phase='complete';if(!this.finished)this.log('All eight endangered occupants are safely outside.','success');this.finished=true;}
   }
   position(mover=this.firefighter){

@@ -27,12 +27,36 @@ ROOMS = {  # floor -> [(suffix, label, x, y)]
 }
 
 
+# Zone footprints (illustrative, metres). Zones are the drawable units for
+# blueprint/AR views: rooms, stairwells, corridors, lobbies. Every graph node on
+# a floor belongs to exactly one zone; a corridor zone holds several nodes.
+# Walls are derived from zone rectangles and doors from the edges that cross them.
+ZONE_RECTS = {  # kind -> (x_min, y_min, x_max, y_max)
+    "STAIR_A": (2.0, 8.5, 8.0, 13.0),
+    "STAIR_B": (32.0, 8.5, 38.0, 13.0),
+    "CORRIDOR": (8.0, 8.5, 32.0, 11.5),
+    "ELEVATOR": (18.5, 11.5, 21.5, 14.0),
+    "ROOM_WEST": (8.0, 11.5, 18.0, 19.5),
+    "ROOM_EAST": (22.0, 11.5, 32.0, 19.5),
+    "LOBBY_MAIN": (14.0, 0.0, 26.0, 8.5),
+    "LOBBY_EAST": (26.0, 0.0, 38.0, 8.5),
+    "STAGING": (14.0, -13.0, 26.0, -7.0),
+}
+
+
 def _dist(a, b):
     return round(math.dist((a["x"], a["y"], a["z"]), (b["x"], b["y"], b["z"])), 1)
 
 
 def build_jacobs_hall() -> dict:
-    nodes, edges = [], []
+    nodes, edges, zones = [], [], []
+
+    def add_zone(zone_id, floor_id, kind, label, rect, node_ids):
+        x_min, y_min, x_max, y_max = rect
+        zones.append({"zone_id": zone_id, "floor_id": floor_id, "kind": kind,
+                      "label": label, "x_min": x_min, "y_min": y_min,
+                      "x_max": x_max, "y_max": y_max, "node_ids": list(node_ids),
+                      "provenance": "simulated"})
 
     def add_node(node_id, floor_id, node_type, label, x, y, z):
         nodes.append({"node_id": node_id, "floor_id": floor_id, "node_type": node_type,
@@ -60,6 +84,18 @@ def build_jacobs_hall() -> dict:
         add_edge(f"{fid}_ELEVATOR", f"{fid}_CORRIDOR_CENTER", "doorway")
         add_edge(f"{fid}_{ROOMS[fid][0][0]}", f"{fid}_CORRIDOR_WEST", "doorway")
         add_edge(f"{fid}_{ROOMS[fid][1][0]}", f"{fid}_CORRIDOR_EAST", "doorway")
+        add_zone(f"{fid}_Z_STAIR_A", fid, "stairs", f"West Stairwell ({fid})",
+                 ZONE_RECTS["STAIR_A"], [f"{fid}_STAIR_A"])
+        add_zone(f"{fid}_Z_STAIR_B", fid, "stairs", f"East Stairwell ({fid})",
+                 ZONE_RECTS["STAIR_B"], [f"{fid}_STAIR_B"])
+        add_zone(f"{fid}_Z_CORRIDOR", fid, "corridor", f"Corridor ({fid})",
+                 ZONE_RECTS["CORRIDOR"], [f"{fid}_CORRIDOR_{s}" for s in ("WEST", "CENTER", "EAST")])
+        add_zone(f"{fid}_Z_ELEVATOR", fid, "elevator", f"Elevator ({fid})",
+                 ZONE_RECTS["ELEVATOR"], [f"{fid}_ELEVATOR"])
+        add_zone(f"{fid}_Z_{ROOMS[fid][0][0]}", fid, "room", ROOMS[fid][0][1],
+                 ZONE_RECTS["ROOM_WEST"], [f"{fid}_{ROOMS[fid][0][0]}"])
+        add_zone(f"{fid}_Z_{ROOMS[fid][1][0]}", fid, "room", ROOMS[fid][1][1],
+                 ZONE_RECTS["ROOM_EAST"], [f"{fid}_{ROOMS[fid][1][0]}"])
 
     for lower, upper in zip(FLOORS, FLOORS[1:]):
         for stair in ("STAIR_A", "STAIR_B"):
@@ -72,6 +108,12 @@ def build_jacobs_hall() -> dict:
     add_edge("F1_ENTRANCE_MAIN", "F1_CORRIDOR_CENTER", "exterior_door")
     add_edge("F1_ENTRANCE_EAST", "F1_CORRIDOR_EAST", "exterior_door")
     add_edge("EXT_STAGING", "F1_ENTRANCE_MAIN", "exterior_door")
+    add_zone("F1_Z_LOBBY_MAIN", "F1", "entrance", "Main Lobby", ZONE_RECTS["LOBBY_MAIN"],
+             ["F1_ENTRANCE_MAIN"])
+    add_zone("F1_Z_LOBBY_EAST", "F1", "entrance", "East Lobby", ZONE_RECTS["LOBBY_EAST"],
+             ["F1_ENTRANCE_EAST"])
+    add_zone("EXT_Z_STAGING", "F1", "staging", "Exterior Staging Area",
+             ZONE_RECTS["STAGING"], ["EXT_STAGING"])
 
     return {
         "building_id": "jacobs_hall",
@@ -86,6 +128,7 @@ def build_jacobs_hall() -> dict:
         "floors": FLOORS,
         "nodes": nodes,
         "edges": edges,
+        "zones": zones,
     }
 
 

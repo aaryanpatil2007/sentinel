@@ -44,6 +44,17 @@ class Building:
         self.floors = data["floors"]
         self.nodes = {n["node_id"]: Node(**n) for n in data["nodes"]}
         self.edges = {e["edge_id"]: Edge(**e) for e in data["edges"]}
+        # Zones: drawable footprints (rooms, corridors, stairwells, lobbies).
+        # Optional — synthetic training buildings have none.
+        self.zones: dict[str, dict] = {z["zone_id"]: z for z in data.get("zones", [])}
+        self.zone_of_node: dict[str, str] = {}
+        for z in self.zones.values():
+            for nid in z["node_ids"]:
+                if nid not in self.nodes:
+                    raise ValueError(f"zone {z['zone_id']} references unknown node {nid}")
+                if nid in self.zone_of_node:
+                    raise ValueError(f"node {nid} belongs to more than one zone")
+                self.zone_of_node[nid] = z["zone_id"]
         self.adjacency: dict[str, list[tuple[str, str]]] = {nid: [] for nid in self.nodes}
         for e in self.edges.values():
             if e.from_node not in self.nodes or e.to_node not in self.nodes:
@@ -62,6 +73,10 @@ class Building:
         n = self.nodes[node_id]
         return {"x": n.x, "y": n.y, "z": n.z, "floor_id": n.floor_id,
                 "coordinate_frame": self.coordinate_frame}
+
+    def zone_for(self, node_id: str) -> dict | None:
+        zid = self.zone_of_node.get(node_id)
+        return self.zones.get(zid) if zid else None
 
     def entrance_nodes(self) -> list[str]:
         return [n.node_id for n in self.nodes.values() if n.node_type == "entrance"]

@@ -3,7 +3,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 import { makeFirefighter, makeResponseVehicle } from './response-view.js';
 import { makeFurnishing } from './furnishings.js';
-import { FLOOR_HEIGHT, LEVELS, ROOMS, UNIT_COLORS, levelLabel, BATHROOMS, LOCKED_ROOMS, OBSTACLES, fireLobes, edgeClear, segmentClear, ROOM_CHARACTER, dangerAppearance, RESPONSE_STAGING, key } from './building.js';
+import { FLOOR_HEIGHT, LEVELS, ROOMS, UNIT_COLORS, levelLabel, BATHROOMS, LOCKED_ROOMS, OBSTACLES, fireLobes, edgeClear, segmentClear, ROOM_CHARACTER, dangerAppearance, RESPONSE_STAGING, INTERIOR_DOORS, key } from './building.js';
 
 const VIEW_FLOOR_HEIGHT = 8;
 const viewY = y => (y - .48) / FLOOR_HEIGHT * VIEW_FLOOR_HEIGHT + .48;
@@ -107,8 +107,12 @@ export class BuildingView {
         this.box(group,[room.w-.15,.08,room.d-.2],[room.x,y+.2,room.z],room.kind==='maker'||room.kind==='shop'?0xd0dce1:0xe5e7e0);
         // Low, translucent partitions expose useful detail without hiding occupants.
         const front=room.z>5?room.z-room.d/2:Math.min(1.4,room.z+room.d/2),back=room.z>5?room.z+room.d/2:room.z-room.d/2;
-        const depth=Math.abs(back-front),middle=(back+front)/2,wall={transparent:true,opacity:.68};
-        for(const x of [room.x-room.w/2,room.x+room.w/2])this.box(group,[.12,.75,depth],[x,y+.58,middle],0xa7b9c2,wall);
+        const wall={transparent:true,opacity:.68};
+        for(const x of [room.x-room.w/2,room.x+room.w/2]){
+          const opening=INTERIOR_DOORS.find(d=>d.rooms.includes(room.id)&&Math.abs(d.x-x)<.01);
+          const spans=opening?[[Math.min(back,front),opening.z-opening.width/2],[opening.z+opening.width/2,Math.max(back,front)]]:[[Math.min(back,front),Math.max(back,front)]];
+          for(const [a,b]of spans)this.box(group,[.12,.75,b-a],[x,y+.58,(a+b)/2],0xa7b9c2,wall);
+        }
         this.box(group,[room.w,.75,.12],[room.x,y+.58,back],0xa7b9c2,wall);
         const gap=1.6,wing=(room.w-gap)/2;
         for(const direction of [-1,1])this.box(group,[wing,.75,.12],[room.x+direction*(gap/2+wing/2),y+.58,front],0xa7b9c2,wall);
@@ -129,12 +133,17 @@ export class BuildingView {
         if(ROOM_CHARACTER[room.id]){label.element.innerHTML=`<strong>${text}</strong><small>${ROOM_CHARACTER[room.id]}</small>`;label.element.classList.add('character-label');}
         this.roomLabels.push(label);
       }
+      for(const door of INTERIOR_DOORS.filter(d=>d.floor===f)){
+        this.box(group,[.6,.07,door.width],[door.x,y+.32,door.z],0x7da89b);
+        const label=this.label(group,door.label,[door.x,y+1.1,door.z],'small-room-label');this.roomLabels.push(label);
+        if(door.forceEdge){const panel=this.box(group,[.12,.85,door.width],[door.x,y+.7,door.z],0xc58a3a,{transparent:true,opacity:.8});this.doorVisuals.set(door.id,{panel,label,edge:key(...door.forceEdge)});}
+      }
       for(const prop of OBSTACLES.filter(p=>p.floor===f)){
         makeFurnishing(this,group,prop,y);
         if(prop.kind==='materialsCart'||prop.kind==='fallenWhiteboard')this.roomLabels.push(this.label(group,prop.label,[prop.x,y+1.5,prop.z],'obstruction-label'));
       }
       const passageFire=this.sim.building.fires.find(front=>front.floor===f&&(f===1||f===3));
-      if(passageFire)this.roomLabels.push(this.label(group,'Fire blocks through-passage',[passageFire.x,y+1.5,passageFire.z],'blocked-label'));
+      if(passageFire)this.roomLabels.push(this.label(group,f===3?'Fire blocks left passage':'Fire blocks through-passage',[passageFire.x,y+1.5,passageFire.z],'blocked-label'));
       for(const [x,name]of [[-16,'E'],[16,'W']]){
         this.box(group,[3,.18,3.5],[x,y+.23,4],0x9dadb3);
         for(let i=0;i<13&&f<3;i++)this.box(group,[2.2,.13,.25],[x,y+.35+i*VIEW_FLOOR_HEIGHT/13,2.5+i*.25],0x586f7e);
@@ -278,7 +287,7 @@ export class BuildingView {
     }
     for(const [id,label]of this.assemblyLabels){const count=this.sim.people.filter(p=>p.status==='rescued'&&p.node===id).length;label.element.textContent=count?`✓ Safe exit · ${count} safe`:'✓ Safe exit';}
     for(const [id,haze]of this.smokeLayers){const node=this.sim.building.nodes.get(id);haze.material.opacity=this.smokeVisible?Math.min(.32,node.smoke*.36):0;}
-    for(const [room,{panel,label}]of this.doorVisuals){const door=this.sim.building.edges.get(key(`r${room}`,`d${room}`));panel.visible=door.locked;label.element.textContent=door.locked?'Locked':'Forced open';label.element.classList.toggle('forced-open',!door.locked);}
+    for(const [room,{panel,label,edge}]of this.doorVisuals){const door=this.sim.building.edges.get(edge??key(`r${room}`,`d${room}`));panel.visible=door.locked;label.element.textContent=door.locked?'Locked':'Forced open';label.element.classList.toggle('forced-open',!door.locked);}
     for(const front of this.sim.building.fires){
       const fire=this.fires.get(front.id)??this.makeFire(front),lobes=fireLobes(front);
       fire.group.visible=this.floor===null||front.floor===this.floor;
@@ -293,7 +302,7 @@ export class BuildingView {
       fire.smoke.forEach((p,i)=>{const rise=(elapsed*.32+i*.6)%2.6;p.visible=this.smokeVisible;p.position.set(lobes[i].x+Math.sin(elapsed*.35+i)*.25,1.1+rise,lobes[i].z);p.material.opacity=(this.sim.containmentStarted?.26:.4)*(1-rise/3.8);p.scale.setScalar(1.8+rise*.4);});
     }
     for(const ff of this.sim.firefighters){
-      const model=this.crewModels.get(ff.id),p=this.sim.position(ff);model.group.position.set(p.x+(ff.node==='safe'?(ff.id-2)*2.4*(ff.next?1-ff.progress:1):0),viewY(p.y),p.z);model.group.visible=this.onFloor(p.y);model.tag.visible=ff.id===this.activeUnit;model.tag.element.textContent=`F${ff.id}`;model.tag.element.classList.toggle('active-unit',ff.id===this.activeUnit);
+      const model=this.crewModels.get(ff.id),p=this.sim.position(ff);model.group.position.set(p.x+(['safe','safe-east'].includes(ff.node)?(ff.id-(this.sim.teamSize+1)/2)*.9*(ff.next?1-ff.progress:1):0),viewY(p.y),p.z);model.group.visible=this.onFloor(p.y);model.tag.visible=ff.id===this.activeUnit;model.tag.element.textContent=`F${ff.id}`;model.tag.element.classList.toggle('active-unit',ff.id===this.activeUnit);
       const toward=this.sim.building.nodes.get(ff.next??ff.path[0]);if(toward&&Math.hypot(toward.x-p.x,toward.z-p.z)>.01)model.group.rotation.y=Math.atan2(toward.x-p.x,toward.z-p.z);
       model.escorts.forEach((e,i)=>{
         e.visible=ff.carrying.length>i&&model.group.visible;

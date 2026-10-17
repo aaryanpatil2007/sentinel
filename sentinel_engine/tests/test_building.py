@@ -63,3 +63,29 @@ def test_resolve_unknown_returns_none(building):
 
 def test_entrances(building):
     assert set(building.entrance_nodes()) == {"F1_ENTRANCE_MAIN", "F1_ENTRANCE_EAST"}
+
+
+def test_zones_cover_every_node_exactly_once(building):
+    assert building.zones
+    for n in building.nodes.values():
+        zone = building.zone_for(n.node_id)
+        assert zone is not None, n.node_id
+        assert zone["floor_id"] == n.floor_id
+        assert zone["x_min"] <= n.x <= zone["x_max"] and zone["y_min"] <= n.y <= zone["y_max"]
+
+
+def test_zones_do_not_overlap_on_a_floor(building):
+    zones = list(building.zones.values())
+    for i, a in enumerate(zones):
+        for b in zones[i + 1:]:
+            if a["floor_id"] != b["floor_id"]:
+                continue
+            ox = min(a["x_max"], b["x_max"]) - max(a["x_min"], b["x_min"])
+            oy = min(a["y_max"], b["y_max"]) - max(a["y_min"], b["y_min"])
+            assert not (ox > 1e-6 and oy > 1e-6), (a["zone_id"], b["zone_id"])
+
+
+def test_building_without_zones_still_loads():
+    data = Building.load().to_dict()
+    b = Building({k: v for k, v in data.items() if k != "zones"})
+    assert b.zones == {} and b.zone_for("F2_STUDIO_210") is None

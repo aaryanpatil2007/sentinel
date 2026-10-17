@@ -168,3 +168,59 @@ def test_civilian_location_moves_civilian(client):
     bad_node = client.post("/civilians/location",
                            json={"civilian_id": cid, "graph_node_id": "NOPE"})
     assert bad_node.status_code == 400
+
+
+def test_building_geometry_endpoint(client):
+    g = client.get("/building/geometry").json()
+    assert g["coordinate_frame"] == "JACOBS_LOCAL" and g["provenance"] == "simulated"
+    f2 = next(f for f in g["floors"] if f["floor_id"] == "F2")
+    assert f2["zones"] and f2["walls"] and f2["doors"]
+
+
+def test_guidance_packet_responder_lifecycle(client):
+    assert client.get("/guidance/responder/UNIT_ALPHA").status_code == 404
+    client.post("/responders", json={"responder_id": "UNIT_ALPHA",
+                                     "graph_node_id": "F1_ENTRANCE_MAIN"})
+    pk = client.get("/guidance/responder/UNIT_ALPHA").json()
+    assert pk["status"] == "no_active_route" and pk["floors"]
+    rep = client.post("/civilians/report", json={
+        "text": "I'm in Studio 210 on the second floor"}).json()
+    client.post("/routes/compute", json={"responder_id": "UNIT_ALPHA",
+                                         "civilian_id": rep["civilian"]["entity_id"]})
+    pk = client.get("/guidance/responder/UNIT_ALPHA").json()
+    assert pk["status"] == "candidate" and pk["requires_command_approval"] is True
+    assert pk["destination"]["kind"] == "civilian"
+    assert pk["render_path"] and pk["steps"][0]["turn"] == "start"
+    before = pk["nodes"]
+    client.post("/hazards", json={"hazard_type": "blocked", "text": "west stairwell",
+                                  "default_floor": "F2", "verified": True})
+    after = client.get("/guidance/responder/UNIT_ALPHA").json()
+    assert after["nodes"] != before and after["route_id"] == pk["route_id"]
+    assert any(h["hazard_type"] == "blocked" for h in after["hazards"])
+
+
+def test_guidance_packet_civilian(client):
+    rep = client.post("/civilians/report", json={
+        "text": "I'm in Studio 210 on the second floor, smoke outside"}).json()
+    civ_id = rep["civilian"]["entity_id"]
+    pk = client.get(f"/guidance/civilian/{civ_id}").json()
+    assert pk["persona"] == "civilian" and pk["status"] == "candidate"
+    assert pk["destination"]["kind"] == "exit"
+    assert pk["message"] and "safe" not in pk["message"].lower()
+    assert pk["risk"] == {}
+    client.post("/civilians", json={})  # civilian with no location
+    pk = client.get("/guidance/civilian/CIV_002").json()
+    assert pk["status"] == "no_location"
+    assert client.get("/guidance/civilian/NOPE").status_code == 404
+
+
+def test_demo_scenario_seeds_and_resets(client):
+    first = client.post("/demo/scenario", json={"block_west_stairwell": False}).json()
+    assert first["route_status"] == "candidate" and first["block_hazard_ids"] == []
+    pk = client.get(f"/guidance/responder/{first['responder_id']}").json()
+    assert "F2_STAIR_A" in pk["nodes"]
+    second = client.post("/demo/scenario", json={"block_west_stairwell": True}).json()
+    assert second["civilian_id"] == first["civilian_id"]        # counters reset
+    assert len(client.get("/responders").json()) == 2             # no duplicates
+    pk = client.get(f"/guidance/responder/{second['responder_id']}").json()
+    assert "F2_STAIR_A" not in pk["nodes"]

@@ -624,5 +624,393 @@
       "distance_m": 10.0,
       "edge_type": "exterior_door"
     }
+  ],
+  "zones": [
+    {
+      "zone_id": "B_Z_STAIR_A",
+      "floor_id": "B",
+      "kind": "stairs",
+      "label": "West Stairwell (B)",
+      "x_min": 2.0,
+      "y_min": 8.5,
+      "x_max": 8.0,
+      "y_max": 13.0,
+      "node_ids": [
+        "B_STAIR_A"
+      ],
+      "provenance": "simulated"
+    },
+    {
+      "zone_id": "B_Z_STAIR_B",
+      "floor_id": "B",
+      "kind": "stairs",
+      "label": "East Stairwell (B)",
+      "x_min": 32.0,
+      "y_min": 8.5,
+      "x_max": 38.0,
+      "y_max": 13.0,
+      "node_ids": [
+        "B_STAIR_B"
+      ],
+      "provenance": "simulated"
+    },
+    {
+      "zone_id": "B_Z_CORRIDOR",
+      "floor_id": "B",
+      "kind": "corridor",
+      "label": "Corridor (B)",
+      "x_min": 8.0,
+      "y_min": 8.5,
+      "x_max": 32.0,
+      "y_max": 11.5,
+      "node_ids": [
+        "B_CORRIDOR_WEST",
+        "B_CORRIDOR_CENTER",
+        "B_CORRIDOR_EAST"
+      ],
+      "provenance": "simulated"
+    },
+    {
+      "zone_id": "B_Z_ELEVATOR",
+      "floor_id": "B",
+      "kind": "elevator",
+      "label": "Elevator (B)",
+      "x_min": 18.5,
+      "y_min": 11.5,
+      "x_max": 21.5,
+      "y_max": 14.0,
+      "node_ids": [
+        "B_ELEVATOR"
+      ],
+      "provenance": "simulated"
+    },
+    {
+      "zone_id": "B_Z_STUDIO_10",
+      "floor_id": "B",
+      "kind": "room",
+      "label": "Studio 10",
+      "x_min": 8.0,
+      "y_min": 11.5,
+      "x_max": 18.0,
+      "y_max": 19.5,
+      "node_ids": [
+        "B_STUDIO_10"
+      ],
+      "provenance": "simulated"
+    },
+    {
+      "zone_id": "B_Z_METAL_SHOP",
+      "floor_id": "B",
+      "kind": "room",
+      "label": "Metal Shop",
+      "x_min": 22.0,
+      "y_min": 11.5,
+      "x_max": 32.0,
+      "y_max": 19.5,
+      "node_ids": [
+        "B_METAL_SHOP"
+      ],
+      "provenance": "simulated"
+    },
+    {
+      "zone_id": "F1_Z_STAIR_A",
+      "floor_id": "F1",
+      "kind": "stairs",
+      "label": "West Stairwell (F1)",
+      "x_min": 2.0,
+      "y_min": 8.5,
+      "x_max": 8.0,
+      "y_max": 13.0,
+      "node_ids": [
+        "F1_STAIR_A"
+      ],
+      "provenance": "simulated"
+    },
+    {
+      "zone_id": "F1_Z_STAIR_B",
+      "floor_id": "F1",
+      "kind": "stairs",
+      "label": "East Stairwell (F1)",
+      "x_min": 32.0,
+      "y_min": 8.5,
+      "x_max": 38.0,
+      "y_max": 13.0,
+      "node_ids": [
+        "F1_STAIR_B"
+      ],
+      "provenance": "simulated"
+    },
+    {
+      "zone_id": "F1_Z_CORRIDOR",
+      "floor_id": "F1",
+      "kind": "corridor",
+      "label": "Corridor (F1)",
+      "x_min": 8.0,
+      "y_min": 8.5,
+      "x_max": 32.0,
+      "y_max": 11.5,
+      "node_ids": [
+        "F1_CORRIDOR_WEST",
+        "F1_CORRIDOR_CENTER",
+        "F1_CORRIDOR_EAST"
+      ],
+      "provenance": "simulated"
+    },
+    {
+      "zone_id": "F1_Z_ELEVATOR",
+      "floor_id": "F1",
+      "kind": "elevator",
+      "label": "Elevator (F1)",
+      "x_min": 18.5,
+      "y_min": 11.5,
+      "x_max": 21.5,
+      "y_max": 14.0,
+      "node_ids": [
+        "F1_ELEVATOR"
+      ],
+      "provenance": "simulated"
+    },
+    {
+      "zone_id": "F1_Z_STUDIO_110",
+      "floor_id": "F1",
+      "kind": "room",
+      "label": "Studio 110",
+      "x_min": 8.0,
+      "y_min": 11.5,
+      "x_max": 18.0,
+      "y_max": 19.5,
+      "node_ids": [
+        "F1_STUDIO_110"
+      ],
+      "provenance": "simulated"
+    },
+    {
+      "zone_id": "F1_Z_STUDIO_120",
+      "floor_id": "F1",
+      "kind": "room",
+      "label": "Studio 120",
+      "x_min": 22.0,
+      "y_min": 11.5,
+      "x_max": 32.0,
+      "y_max": 19.5,
+      "node_ids": [
+        "F1_STUDIO_120"
+      ],
+      "provenance": "simulated"
+    },
+    {
+      "zone_id": "F2_Z_STAIR_A",
+      "floor_id": "F2",
+      "kind": "stairs",
+      "label": "West Stairwell (F2)",
+      "x_min": 2.0,
+      "y_min": 8.5,
+      "x_max": 8.0,
+      "y_max": 13.0,
+      "node_ids": [
+        "F2_STAIR_A"
+      ],
+      "provenance": "simulated"
+    },
+    {
+      "zone_id": "F2_Z_STAIR_B",
+      "floor_id": "F2",
+      "kind": "stairs",
+      "label": "East Stairwell (F2)",
+      "x_min": 32.0,
+      "y_min": 8.5,
+      "x_max": 38.0,
+      "y_max": 13.0,
+      "node_ids": [
+        "F2_STAIR_B"
+      ],
+      "provenance": "simulated"
+    },
+    {
+      "zone_id": "F2_Z_CORRIDOR",
+      "floor_id": "F2",
+      "kind": "corridor",
+      "label": "Corridor (F2)",
+      "x_min": 8.0,
+      "y_min": 8.5,
+      "x_max": 32.0,
+      "y_max": 11.5,
+      "node_ids": [
+        "F2_CORRIDOR_WEST",
+        "F2_CORRIDOR_CENTER",
+        "F2_CORRIDOR_EAST"
+      ],
+      "provenance": "simulated"
+    },
+    {
+      "zone_id": "F2_Z_ELEVATOR",
+      "floor_id": "F2",
+      "kind": "elevator",
+      "label": "Elevator (F2)",
+      "x_min": 18.5,
+      "y_min": 11.5,
+      "x_max": 21.5,
+      "y_max": 14.0,
+      "node_ids": [
+        "F2_ELEVATOR"
+      ],
+      "provenance": "simulated"
+    },
+    {
+      "zone_id": "F2_Z_STUDIO_210",
+      "floor_id": "F2",
+      "kind": "room",
+      "label": "Studio 210",
+      "x_min": 8.0,
+      "y_min": 11.5,
+      "x_max": 18.0,
+      "y_max": 19.5,
+      "node_ids": [
+        "F2_STUDIO_210"
+      ],
+      "provenance": "simulated"
+    },
+    {
+      "zone_id": "F2_Z_STUDIO_220",
+      "floor_id": "F2",
+      "kind": "room",
+      "label": "Studio 220",
+      "x_min": 22.0,
+      "y_min": 11.5,
+      "x_max": 32.0,
+      "y_max": 19.5,
+      "node_ids": [
+        "F2_STUDIO_220"
+      ],
+      "provenance": "simulated"
+    },
+    {
+      "zone_id": "F3_Z_STAIR_A",
+      "floor_id": "F3",
+      "kind": "stairs",
+      "label": "West Stairwell (F3)",
+      "x_min": 2.0,
+      "y_min": 8.5,
+      "x_max": 8.0,
+      "y_max": 13.0,
+      "node_ids": [
+        "F3_STAIR_A"
+      ],
+      "provenance": "simulated"
+    },
+    {
+      "zone_id": "F3_Z_STAIR_B",
+      "floor_id": "F3",
+      "kind": "stairs",
+      "label": "East Stairwell (F3)",
+      "x_min": 32.0,
+      "y_min": 8.5,
+      "x_max": 38.0,
+      "y_max": 13.0,
+      "node_ids": [
+        "F3_STAIR_B"
+      ],
+      "provenance": "simulated"
+    },
+    {
+      "zone_id": "F3_Z_CORRIDOR",
+      "floor_id": "F3",
+      "kind": "corridor",
+      "label": "Corridor (F3)",
+      "x_min": 8.0,
+      "y_min": 8.5,
+      "x_max": 32.0,
+      "y_max": 11.5,
+      "node_ids": [
+        "F3_CORRIDOR_WEST",
+        "F3_CORRIDOR_CENTER",
+        "F3_CORRIDOR_EAST"
+      ],
+      "provenance": "simulated"
+    },
+    {
+      "zone_id": "F3_Z_ELEVATOR",
+      "floor_id": "F3",
+      "kind": "elevator",
+      "label": "Elevator (F3)",
+      "x_min": 18.5,
+      "y_min": 11.5,
+      "x_max": 21.5,
+      "y_max": 14.0,
+      "node_ids": [
+        "F3_ELEVATOR"
+      ],
+      "provenance": "simulated"
+    },
+    {
+      "zone_id": "F3_Z_STUDIO_310",
+      "floor_id": "F3",
+      "kind": "room",
+      "label": "Studio 310",
+      "x_min": 8.0,
+      "y_min": 11.5,
+      "x_max": 18.0,
+      "y_max": 19.5,
+      "node_ids": [
+        "F3_STUDIO_310"
+      ],
+      "provenance": "simulated"
+    },
+    {
+      "zone_id": "F3_Z_PROTOTYPING_LAB",
+      "floor_id": "F3",
+      "kind": "room",
+      "label": "Advanced Prototyping Lab",
+      "x_min": 22.0,
+      "y_min": 11.5,
+      "x_max": 32.0,
+      "y_max": 19.5,
+      "node_ids": [
+        "F3_PROTOTYPING_LAB"
+      ],
+      "provenance": "simulated"
+    },
+    {
+      "zone_id": "F1_Z_LOBBY_MAIN",
+      "floor_id": "F1",
+      "kind": "entrance",
+      "label": "Main Lobby",
+      "x_min": 14.0,
+      "y_min": 0.0,
+      "x_max": 26.0,
+      "y_max": 8.5,
+      "node_ids": [
+        "F1_ENTRANCE_MAIN"
+      ],
+      "provenance": "simulated"
+    },
+    {
+      "zone_id": "F1_Z_LOBBY_EAST",
+      "floor_id": "F1",
+      "kind": "entrance",
+      "label": "East Lobby",
+      "x_min": 26.0,
+      "y_min": 0.0,
+      "x_max": 38.0,
+      "y_max": 8.5,
+      "node_ids": [
+        "F1_ENTRANCE_EAST"
+      ],
+      "provenance": "simulated"
+    },
+    {
+      "zone_id": "EXT_Z_STAGING",
+      "floor_id": "F1",
+      "kind": "staging",
+      "label": "Exterior Staging Area",
+      "x_min": 14.0,
+      "y_min": -13.0,
+      "x_max": 26.0,
+      "y_max": -7.0,
+      "node_ids": [
+        "EXT_STAGING"
+      ],
+      "provenance": "simulated"
+    }
   ]
 }

@@ -22,7 +22,8 @@ class IncidentState:
         self._counters: dict[str, int] = {}
 
     def reset(self) -> None:
-        """Clear the incident in place; API handlers keep a reference to this object."""
+        """Clear everything in place (demo control). In-place so closures that
+        captured this state object keep working."""
         self.entities.clear()
         self.hazards.clear()
         self.routes.clear()
