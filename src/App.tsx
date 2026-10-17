@@ -1,3 +1,10 @@
+import { AppShell } from './components/layout/AppShell'
+import { ErrorBoundary } from './components/layout/ErrorBoundary'
+
 export default function App() {
-  return <div className="p-4 text-14">Sentinel</div>
+  return (
+    <ErrorBoundary>
+      <AppShell />
+    </ErrorBoundary>
+  )
 }

@@ -41,4 +41,23 @@
     outline: 2px solid theme('colors.primary');
     outline-offset: 2px;
   }
+  .scene-label {
+    @apply rounded-8 border border-outline bg-surface px-1.5 font-mono text-11 font-medium text-on-surface;
+    white-space: nowrap;
+    transform: translateY(-18px);
+    pointer-events: none;
+  }
+  .scene-label--selected {
+    @apply border-primary text-primary;
+  }
+  .scene-room-label {
+    @apply text-11 text-on-surface-variant;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  .scene-floor-tag {
+    @apply font-mono text-12 font-semibold text-on-surface-variant;
+    pointer-events: none;
+  }
 }
+
