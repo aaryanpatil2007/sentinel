@@ -139,6 +139,17 @@ describe('reset and persistence', () => {
     expect(mergePersisted({ incident: {}, world: {}, threads: [] }, current)).toBe(current)
   })
 
+  it('rejects persisted people or threads from an older shape', () => {
+    const current = state()
+    const clone = () => JSON.parse(JSON.stringify(createMockState(1)))
+    const noMobility = clone()
+    delete noMobility.world.people[0].mobility
+    expect(mergePersisted(noMobility, current)).toBe(current)
+    const noUnread = clone()
+    delete noUnread.threads[0].unread
+    expect(mergePersisted(noUnread, current)).toBe(current)
+  })
+
   it('uses valid persisted data', () => {
     const saved = createMockState(123)
     const merged = mergePersisted(JSON.parse(JSON.stringify(saved)), state())
