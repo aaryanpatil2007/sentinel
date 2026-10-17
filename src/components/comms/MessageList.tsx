@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import type { Message } from '../../types'
+import { isOwnMessage } from './isOwnMessage'
 import { MessageRow } from './MessageRow'
 
 type Props = { messages: Message[]; ownFrom: 'resident' | 'responder' }
@@ -17,7 +18,7 @@ export function MessageList({ messages, ownFrom }: Props) {
     <div role="log" aria-live="polite" className="min-h-0 flex-1 overflow-y-auto px-2 py-3">
       <ul className="space-y-1">
         {messages.map((m) => (
-          <MessageRow key={m.id} message={m} own={m.from === ownFrom} />
+          <MessageRow key={m.id} message={m} own={isOwnMessage(m, ownFrom)} />
         ))}
       </ul>
       <div ref={endRef} />

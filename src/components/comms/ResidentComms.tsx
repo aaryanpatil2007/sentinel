@@ -1,7 +1,7 @@
 import { threadIdFor } from '../../data/scenarioThreads'
 import { civilianStatus, placeLabel } from '../../engine/derive'
 import { useSentinel } from '../../store'
-import { useEntity, useNodes, useThread } from '../../store/selectors'
+import { useNodes, useThread, useViewedCivilian } from '../../store/selectors'
 import { InlineConfirm } from '../ui/InlineConfirm'
 import { MonoText } from '../ui/MonoText'
 import { StatusDot } from '../ui/StatusDot'
@@ -10,13 +10,12 @@ import { MessageList } from './MessageList'
 import { QuickReplies } from './QuickReplies'
 
 export function ResidentComms() {
-  const viewingAsId = useSentinel((s) => s.viewingAsId)
   const live = useSentinel((s) => s.engineStatus === 'live')
   const sendMessage = useSentinel((s) => s.sendMessage)
   const sendQuickReply = useSentinel((s) => s.sendQuickReply)
   const clearThread = useSentinel((s) => s.clearThread)
-  const civilian = useEntity(viewingAsId)
-  const thread = useThread(threadIdFor(viewingAsId))
+  const civilian = useViewedCivilian()
+  const thread = useThread(threadIdFor(civilian?.entity_id ?? ''))
   const nodes = useNodes()
 
   if (!civilian || !thread) return <div className="flex-1 p-4 text-14 text-on-surface-variant">No resident selected.</div>
