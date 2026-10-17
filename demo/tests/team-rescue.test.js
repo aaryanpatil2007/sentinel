@@ -74,3 +74,21 @@ test('a walker trapped by new heat stops and requests assistance without telepor
   assert.equal(person.status,'stranded');assert.deepEqual(s.position(person),before);
   assert.ok(s.events.some(e=>e.message.includes('assistance')));
 });
+test('a stranded walker can be recovered by a firefighter at their actual position',()=>{
+  const s=new RescueSimulation('fixed',1);s.running=true;let person;
+  for(let i=0;i<2000&&!person;i++){s.tick(.1);person=s.people.find(p=>p.status==='walking'&&p.next&&p.progress>.2);}
+  assert.ok(person);const before=s.position(person);
+  s.building.nodes.get(person.node).heat=.5;s.building.nodes.get(person.next).heat=.5;s.tick(.01);
+  assert.equal(person.status,'stranded');assert.deepEqual(s.position(person),before);
+  // Retire other rescues to isolate the assistance request.
+  for(const p of s.people)if(p!==person)p.status='rescued';
+  const ff=s.firefighter;ff.carrying=[];ff.pickups=[];ff.next=null;ff.node='safe';ff.path=[];ff.progress=0;
+  s.plan();assert.ok(ff.pickups.includes(person.id),'A crew must be assigned to the reachable stranded walker');
+  assert.deepEqual(s.building.nodes.get(person.node).x,before.x);
+  let recovered=false;
+  for(let i=0;i<5000&&s.running;i++){
+    const old=s.position(person);s.tick(.1);
+    if(person.status==='escorted'&&!recovered){const crew=s.position(ff);assert.ok(Math.hypot(crew.x-old.x,crew.y-old.y,crew.z-old.z)<.5);recovered=true;}
+  }
+  assert.ok(recovered);assert.equal(person.status,'rescued');
+});

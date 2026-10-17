@@ -90,6 +90,7 @@ function instruction(){
   if(next?.type==='exit')return [`Use the ${next.id==='west-exit'?'Etcheverry Plaza':'LeRoy Avenue'} entrance.`,`${escorted}/2 people with you. Follow this unit’s colored route.`];
   if(next&&next.floor!==current.floor)return [`${next.floor>current.floor?'Climb':'Descend'} the ${next.id.startsWith('w')?'west':'east'} stair to ${levelLabel(next.floor).toLowerCase()}.`,`${escorted}/2 escorted · ${ff.pickups.length} pickup${ff.pickups.length===1?'':'s'} remaining.`];
   if(next?.type==='room')return [`Enter ${next.label} and locate person ${ff.target}.`,escorted?'Collect the second person, then escort both to the safe handoff.':'Capacity available for two people.'];
+  if(next?.type==='rescue')return [`Reach person ${ff.target} at the marked refuge point.`,'Their walking route closed. Resume the escort toward a clear route outside.'];
   return [`Continue through ${levelLabel(next?.floor??current.floor).toLowerCase()}.`,ff.pickups.length?`Reach ${ff.pickups.map(id=>sim.people.find(p=>p.id===id).room).join(' + ')}. ${escorted}/2 escorted.`:'Follow the green segment to a clear evacuation route.'];
 }
 function renderUi(force=false){

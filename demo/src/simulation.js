@@ -30,7 +30,7 @@ export class RescueSimulation {
   reset(mode=this.mode,teamSize=this.teamSize??3){
     if(!Number.isInteger(teamSize)||teamSize<1||teamSize>3)throw new RangeError('Choose 1–3 firefighters.');
     this.mode=mode;this.teamSize=teamSize;this.building=createBuilding();this.time=0;this.running=false;
-    this.events=[];this.handoffs=[];this.replans=0;this.lastPlan=-Infinity;this.spreadAccumulator=0;this.finished=false;
+    this.events=[];this.handoffs=[];this.replans=0;this.lastPlan=-Infinity;this.spreadAccumulator=0;this.finished=false;this.rescuePointCount=0;
     this.people=['10C','ROBOT','120B','120C','220A','220B','310D','310C'].map((room,i)=>({id:i+1,node:`r${room}`,room,status:'waiting',unit:null,next:null,progress:0,path:[],releasedAt:null}));
     for(const [id,heat]of [['rMETAL',.90],['r120',.92],['r220',.86],['rAPT',.88]])this.building.nodes.get(id).heat=heat;
     for(const p of this.people)Object.assign(this.building.nodes.get(p.node),{heat:.45,smoke:.75});
@@ -93,7 +93,7 @@ export class RescueSimulation {
   plan(initial=false){
     this.safeRoutes=this.civilianRoutes();
     const handoffGoals=new Set([...this.safeRoutes.keys()].filter(id=>this.building.nodes.get(id).type!=='room'));
-    const waiting=this.people.filter(p=>p.status==='waiting'&&(this.urgency(p)>=DANGER_THRESHOLD||p.needsRescue));
+    const waiting=this.people.filter(p=>['waiting','stranded'].includes(p.status)&&(this.urgency(p)>=DANGER_THRESHOLD||p.needsRescue));
     const cache=new Map(),releaseCache=new Map();
     const travel=(a,b)=>{const k=`${a}|${b}`;if(!cache.has(k))cache.set(k,shortestPath(this.building,a,b));return cache.get(k);};
     const release=a=>{if(!releaseCache.has(a))releaseCache.set(a,shortestPath(this.building,a,handoffGoals));return releaseCache.get(a);};
@@ -158,7 +158,7 @@ export class RescueSimulation {
   spread(dt){
     const {nodes,adjacency}=this.building,updates=[];
     for(const n of nodes.values()){
-      if(['safe','exit'].includes(n.type))continue;
+      if(['safe','exit','rescue'].includes(n.type))continue;
       let heatIn=0,smokeIn=0;
       for(const {id,edge}of adjacency.get(n.id)){
         const m=nodes.get(id);if(edge.blocked||edge.type==='outside')continue;
@@ -175,7 +175,27 @@ export class RescueSimulation {
     }
     let blocks=0;
     for(const [n,heat,smoke]of updates){if(n.heat<BLOCK_HEAT&&heat>=BLOCK_HEAT){blocks++;this.log(`${n.label} is impassable. Team routes updated.`,'danger');}n.heat=heat;n.smoke=smoke;}
+    // A stranded person's temporary graph point follows heat on its parent edge.
+    for(const n of nodes.values())if(n.anchor){
+      const a=nodes.get(n.anchor.a),b=nodes.get(n.anchor.b),t=n.anchor.ratio;
+      n.heat=a.heat+(b.heat-a.heat)*t;n.smoke=a.smoke+(b.smoke-a.smoke)*t;
+    }
+    for(const edge of this.building.edges.values())if(edge.sourceEdge)edge.blocked=this.building.edges.get(edge.sourceEdge).blocked;
     return blocks;
+  }
+  strand(person){
+    // Insert a pickup point at the exact stopped position, splitting the travel
+    // effort of the parent edge so crews can reach the person without a jump.
+    const position=this.position(person),a=this.building.nodes.get(person.node),b=this.building.nodes.get(person.next),ratio=person.progress;
+    const sourceKey=key(a.id,b.id),source=this.building.edges.get(sourceKey);
+    const id=`rescue-${person.id}-${++this.rescuePointCount}`;
+    const node={id,...position,floor:Math.round((position.y-.48)/FLOOR_HEIGHT)+1,type:'rescue',label:`Person ${person.id} refuge point`,heat:a.heat+(b.heat-a.heat)*ratio,smoke:a.smoke+(b.smoke-a.smoke)*ratio,anchor:{a:a.id,b:b.id,ratio}};
+    this.building.nodes.set(id,node);this.building.adjacency.set(id,[]);
+    for(const [endpoint,fraction]of [[a.id,ratio],[b.id,1-ratio]]){
+      const edge={a:endpoint,b:id,type:source.type,blocked:source.blocked,length:Math.max(.001,source.length*fraction),sourceEdge:sourceKey};
+      this.building.edges.set(key(endpoint,id),edge);this.building.adjacency.get(endpoint).push({id,edge});this.building.adjacency.get(id).push({id:endpoint,edge});
+    }
+    Object.assign(person,{node:id,next:null,progress:0,path:[],status:'stranded',needsRescue:true});
   }
   move(mover,dt,speed,civilian=false){
     if(!mover.next)return false;
@@ -185,7 +205,7 @@ export class RescueSimulation {
       const previous=this.building.nodes.get(mover.node);
       if(!passable(previous)){
         mover.phase='holding';
-        if(civilian){mover.status='stranded';mover.needsRescue=true;this.log(`Person ${mover.id}: hold position; trapped by heat. Additional assistance required.`,'danger');this.lastPlan=-Infinity;}
+        if(civilian){this.strand(mover);this.log(`Person ${mover.id}: hold position; trapped by heat. Additional assistance required.`,'danger');this.lastPlan=-Infinity;}
         return false;
       }
       const old=mover.node;mover.node=mover.next;mover.next=old;mover.progress=1-mover.progress;mover.reversing=true;mover.path=[];
@@ -211,7 +231,7 @@ export class RescueSimulation {
     for(const ff of this.firefighters){
       if(ff.next){this.move(ff,dt,ff.carrying.length===2?2.4:ff.carrying.length?2.8:3.4);continue;}
       const target=this.people.find(p=>p.id===ff.pickups[0]);
-      if(target?.status==='waiting'&&ff.node===target.node&&ff.carrying.length<2){
+      if(target&&['waiting','stranded'].includes(target.status)&&ff.node===target.node&&ff.carrying.length<2){
         target.status='escorted';target.unit=ff.id;ff.carrying.push(target.id);ff.pickups.shift();ff.target=ff.pickups[0]??null;
         ff.phase=ff.pickups.length?'collecting':'evacuating';
         this.log(`Unit ${ff.id} located person ${target.id} in ${this.building.nodes.get(target.node).label}. Escort ${ff.carrying.length}/2.`,'success');

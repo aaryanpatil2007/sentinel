@@ -1,0 +1,2 @@
+# Preserve upstream Three.js source without imposing project whitespace rules.
+vendor/** -whitespace
