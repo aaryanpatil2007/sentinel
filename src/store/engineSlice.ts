@@ -71,6 +71,8 @@ let connecting: Promise<void> | null = null
 let refreshing: Promise<void> | null = null
 let polling = false
 let seeding: Promise<void> | null = null
+// Set by seed so the next refresh does not diff the new incident against the pre-reset one.
+let skipNextDiff = false
 
 export const createEngineSlice: SliceCreator<EngineSlice> = (set, get) => {
   const goOffline = (err: unknown) => {
@@ -137,15 +139,19 @@ export const createEngineSlice: SliceCreator<EngineSlice> = (set, get) => {
           const advisories = ids.includes(viewing) ? { ...get().advisories, [viewing]: await client.advisory(viewing) } : get().advisories
           const now = Date.now()
           // Only diff against live observations, never against the offline recording.
-          const previous = get().engineStatus === 'live' ? { snapshot: get().snapshot, evacuations: get().evacuations } : { snapshot: null, evacuations: {} }
-          const messages = incidentChangeMessages(previous, { snapshot, evacuations }, indexNodes(get().graph), now)
+          // An external reset (seq restarts lower) or our own reseed also skips the diff.
+          const externalReset = snapshot.last_event_seq < get().lastSeq
+          const skipDiff = skipNextDiff || externalReset
+          skipNextDiff = false
+          const previous = get().engineStatus === 'live' && !skipDiff ? { snapshot: get().snapshot, evacuations: get().evacuations } : { snapshot: null, evacuations: {} }
+          const messages = skipDiff ? [] : incidentChangeMessages(previous, { snapshot, evacuations }, indexNodes(get().graph), now)
           set((s) => ({
             snapshot,
             prediction,
             recommendations,
             evacuations,
             advisories,
-            lastSeq: Math.max(s.lastSeq, snapshot.last_event_seq),
+            lastSeq: externalReset ? snapshot.last_event_seq : Math.max(s.lastSeq, snapshot.last_event_seq),
             updatedAt: now,
             threads: appendMessages(s.threads, messages),
           }))
@@ -191,7 +197,8 @@ export const createEngineSlice: SliceCreator<EngineSlice> = (set, get) => {
         try {
           const client = getEngineClient()
           await client.reset()
-          set({ lastSeq: 0, snapshot: null, evacuations: {}, advisories: {} })
+          set({ lastSeq: 0 })
+          skipNextDiff = true
           for (const resident of scenario.residents) await client.report(resident.text)
           for (const responder of scenario.responders) await client.addResponder(responder.id, responder.name, responder.node)
           for (const node of scenario.ignite) await client.ignite(node)
@@ -202,6 +209,9 @@ export const createEngineSlice: SliceCreator<EngineSlice> = (set, get) => {
             if (rec) await client.computeRoute(responder.id, rec.civilian_id)
           }
           await get().refresh()
+        } catch (err) {
+          skipNextDiff = false
+          throw err
         } finally {
           seeding = null
         }
@@ -230,8 +240,15 @@ export const createEngineSlice: SliceCreator<EngineSlice> = (set, get) => {
 
     reportCivilian: (civilianId, text) =>
       runAction(async (client) => {
-        const prior = civiliansOf(get().snapshot).find((c) => c.entity_id === civilianId)?.report?.raw_text
-        await client.report(prior ? `${prior} ${text}` : text, civilianId)
+        const before = civiliansOf(get().snapshot).find((c) => c.entity_id === civilianId)
+        const prior = before?.report?.raw_text
+        const full = !prior ? text : prior.endsWith(text) ? prior : `${prior} ${text}`
+        const result = await client.report(full, civilianId)
+        // The engine re-resolves location from the whole text; undo a move that only came from the old text.
+        const recorded = before?.graph_node_id
+        const priorNode = before?.report?.location?.node_id
+        const now = result.civilian.graph_node_id
+        if (recorded && now !== recorded && now === priorNode) await client.moveCivilian(civilianId, recorded)
       }),
 
     moveCivilian: (civilianId, nodeId) => runAction((client) => client.moveCivilian(civilianId, nodeId)),

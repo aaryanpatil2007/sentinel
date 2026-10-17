@@ -12,6 +12,8 @@ export class FakeEngine implements EngineClient {
   /** When false the engine has no civilians until a report arrives. */
   seeded: boolean
   evacuationOverrides: Record<string, Route | null> = {}
+  /** When set, report() returns the civilian at this graph node (as if the engine re-resolved the location). */
+  reportReturns: { graph_node_id: string } | null = null
   private queue: EngineEvent[] = []
   private seq = 0
 
@@ -87,7 +89,8 @@ export class FakeEngine implements EngineClient {
     this.hit('report', [text, civilianId])
     this.seeded = true
     this.emit('civilian_report')
-    const civilian = this.civilian(civilianId)
+    const base = this.civilian(civilianId)
+    const civilian = this.reportReturns ? { ...base, ...this.reportReturns } : base
     return { civilian, report: civilian.report!, priority: civilian.priority! }
   }
 

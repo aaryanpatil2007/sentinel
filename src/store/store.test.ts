@@ -204,6 +204,55 @@ describe('messages', () => {
   })
 })
 
+describe('report follow-ups', () => {
+  it('restores a moved location when the engine re-resolves the old room', async () => {
+    await state().connect()
+    const civ = state().snapshot!.entities.find((e) => e.entity_id === 'CIV_003')!
+    const oldRoom = civ.report!.location!.node_id
+    const moved = { ...civ, graph_node_id: 'EXT_STAGING' }
+    useSentinel.setState((s) => ({ snapshot: { ...s.snapshot!, entities: s.snapshot!.entities.map((e) => (e.entity_id === 'CIV_003' ? moved : e)) } }))
+    engine.reportReturns = { graph_node_id: oldRoom }
+    await state().reportCivilian('CIV_003', 'Still here.')
+    expect(engine.callsTo('moveCivilian').at(-1)?.args).toEqual(['CIV_003', 'EXT_STAGING'])
+  })
+
+  it('appends a repeated quick phrase only once', async () => {
+    await state().connect()
+    await state().reportCivilian('CIV_003', "I'm trapped.")
+    const prior = recorded('CIV_003').report!.raw_text
+    useSentinel.setState((s) => ({
+      snapshot: {
+        ...s.snapshot!,
+        entities: s.snapshot!.entities.map((e) => (e.entity_id === 'CIV_003' ? { ...e, report: { ...e.report!, raw_text: `${prior} I'm trapped.` } } : e)),
+      },
+    }))
+    await state().reportCivilian('CIV_003', "I'm trapped.")
+    expect(engine.callsTo('report').at(-1)?.args[0]).toBe(`${prior} I'm trapped.`)
+  })
+})
+
+describe('engine sync resets', () => {
+  it('treats a lower snapshot seq as an external reset without change messages', async () => {
+    await state().connect()
+    const before = state().threads
+    useSentinel.setState({ lastSeq: 500 })
+    await state().refresh()
+    expect(state().lastSeq).toBe(0)
+    expect(state().threads).toEqual(before)
+  })
+
+  it('keeps the snapshot during reseed and posts no system messages', async () => {
+    await state().connect()
+    const before = state().threads
+    let sawNull = false
+    const unsub = useSentinel.subscribe((s) => { if (!s.snapshot) sawNull = true })
+    await state().resetIncident()
+    unsub()
+    expect(sawNull).toBe(false)
+    expect(state().threads).toEqual(before)
+  })
+})
+
 describe('selection and reset', () => {
   it('syncs civilian and thread selection', () => {
     state().selectCivilian('CIV_002')
