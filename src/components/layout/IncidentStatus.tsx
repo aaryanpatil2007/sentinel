@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useNow } from '../../hooks/useNow'
 import { formatElapsed } from '../../lib/format'
 import { useSentinel } from '../../store'
@@ -9,14 +9,23 @@ export const INCIDENT_NAME = 'Jacobs Hall'
 export const INCIDENT_ADDRESS = '2530 Ridge Rd, Berkeley'
 const OFFLINE_ELAPSED_MS = 14 * 60_000
 
-/** Elapsed time runs from the earliest civilian report on a live engine, or a fixed 14 minutes into the recording offline. */
+/**
+ * Elapsed time runs from the earliest civilian report seen when the engine first goes live, latched so later
+ * updates or status changes never move it. Until then (or if never live) it is a fixed 14 minutes into the recording.
+ */
 function useIncidentStart(): number {
   const [loadedAt] = useState(() => Date.now())
+  const latched = useRef<number | null>(null)
   const live = useSentinel((s) => s.engineStatus === 'live')
   const snapshot = useSentinel((s) => s.snapshot)
-  if (!live || !snapshot) return loadedAt - OFFLINE_ELAPSED_MS
-  const times = snapshot.entities.map((e) => Date.parse(e.last_updated)).filter((t) => Number.isFinite(t))
-  return times.length ? Math.min(...times) : loadedAt
+  if (latched.current === null && live && snapshot) {
+    const times = snapshot.entities
+      .filter((e) => e.entity_type === 'civilian')
+      .map((e) => Date.parse(e.last_updated))
+      .filter((t) => Number.isFinite(t))
+    if (times.length) latched.current = Math.min(...times)
+  }
+  return latched.current ?? loadedAt - OFFLINE_ELAPSED_MS
 }
 
 export function IncidentStatus() {
