@@ -14,6 +14,6 @@ const server = createServer(async (req, res) => {
     res.writeHead(200, {'Content-Type': (types[extname(file)] || 'application/octet-stream') + '; charset=utf-8', 'Cache-Control': 'no-cache'});res.end(body);
   } catch {res.writeHead(404);res.end('Not found');}
 });
-server.listen(port, '127.0.0.1', () => console.log(`Ember is running at http://127.0.0.1:${port}`));
+server.listen(port, '127.0.0.1', () => console.log(`Sentinel is running at http://127.0.0.1:${port}`));
 process.on('SIGINT', () => server.close(() => process.exit(0)));
 process.on('SIGTERM', () => server.close(() => process.exit(0)));

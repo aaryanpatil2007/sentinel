@@ -22,17 +22,11 @@ const sim = new RescueSimulation('fixed');
 let speed = 4, selected = null, selectedUnit = 1, lastUi = -1;
 
 document.querySelector('#app').innerHTML = `
-  <header class="app-header">
-    <a class="brand" href="#" aria-label="Ember rescue simulator"><span class="brand-mark">${icon('flame')}</span><strong>ember<span>.</span></strong><span class="brand-divider"></span><span class="brand-subtitle">Rescue simulator</span></a>
-    <div class="header-location"><span class="location-dot"></span>Jacobs Hall <span class="location-secondary">/ Berkeley, CA</span></div>
-    <button class="quiet-button" id="about-button">${icon('info')}<span>About this demo</span></button>
-  </header>
   <div class="workspace">
     <aside class="scenario-panel">
-      <div class="panel-heading"><span class="section-icon">${icon('layers')}</span><span>Incident setup</span><span class="demo-tag">Demo</span></div>
-      <div class="incident-title"><h1>Every route <br>makes a difference.</h1><p>One building. Eight urgent rescues. <br>A changing way out.</p></div>
-      <div class="building-address"><strong>Jacobs Institute for Design Innovation</strong><span>2530 Ridge Road, UC Berkeley</span><span>Basement + 3 floors · published Jacobs layout</span></div>
-      <fieldset class="mode-picker"><legend>Choose a scenario</legend>
+      <div class="sidebar-brand"><span class="brand-mark">${icon('flame')}</span><h1>Sentinel</h1><button class="quiet-button" id="about-button" aria-label="About Sentinel" title="About Sentinel">${icon('info')}</button></div>
+      <div class="building-address"><strong>Jacobs Hall, UC Berkeley</strong><span>Basement + 3 floors · rescue simulation</span></div>
+      <fieldset class="mode-picker"><legend>Fire behavior</legend>
         <label class="mode-option selected"><input type="radio" name="mode" value="fixed" checked/><span class="radio-indicator"></span><span><strong>Fixed fire</strong><small>Plan around a frozen incident.</small></span><span class="mode-number">01</span></label>
         <label class="mode-option"><input type="radio" name="mode" value="spread"/><span class="radio-indicator"></span><span><strong>Spreading fire</strong><small>Watch routes adapt in real time.</small></span><span class="mode-number">02</span></label>
       </fieldset>
@@ -40,7 +34,7 @@ document.querySelector('#app').innerHTML = `
       <div class="team-size-row"><label for="team-size">Firefighters</label><select id="team-size"><option value="1">1 firefighter</option><option value="2">2 firefighters</option><option value="3" selected>3 firefighters</option></select></div><div class="simulation-actions"><button id="start-button" class="primary-button">${icon('play')}<span>Start rescue</span></button><button id="reset-button" class="square-button" aria-label="Reset the scenario" title="Reset the scenario">${icon('reset')}</button></div>
       <div class="speed-row"><label for="speed">Simulation speed</label><select id="speed"><option value="1">1×</option><option value="4" selected>4×</option><option value="10">10×</option></select></div>
       <div class="priority-explainer"><span class="section-icon">${icon('shield')}</span><div><strong>Danger first. Distance matters.</strong><p>Priorities balance immediate danger, two-person pickups, and safe handoffs. Crews share assignments.</p></div></div>
-      <div class="scenario-bottom"><span class="tiny-dot"></span>Repeatable incident · same starting conditions</div>
+      <div class="scenario-bottom"><span>Illustrative demo · not emergency guidance</span><a href="https://jacobsinstitute.berkeley.edu/our-spaces-at-a-glance/" target="_blank" rel="noopener noreferrer">Building reference ↗</a></div>
     </aside>
     <main class="main-panel">
       <div class="scene-header"><div><h2>Building overview</h2><p>Choose a crew for its route. Select a floor for room labels.</p></div><div class="status-pill" id="simulation-status"><span></span>Ready to begin</div></div>
@@ -64,8 +58,8 @@ document.querySelector('#app').innerHTML = `
       <div class="guidance-footer">${icon('exit')}<span>Safe handoff → independent exit</span></div>
     </aside>
   </div>
-  <footer class="app-footer"><span>Illustrative simulation · not an emergency navigation tool</span><a href="https://jacobsinstitute.berkeley.edu/our-spaces-at-a-glance/" target="_blank" rel="noopener noreferrer">Building reference ↗</a><span class="footer-right">Jacobs Hall / Scenario 001</span></footer>
-  <dialog id="about-dialog"><button class="dialog-close square-button" aria-label="Close about dialog">×</button><span class="brand-mark">${icon('flame')}</span><h2>A small simulation.<br>A complex way out.</h2><p>This demo follows UC Berkeley’s published Jacobs Hall floor diagrams: basement studios 10 and 10C, metal shop and robotics lab; level 1 makerspaces 110 and 120; level 2 MDes studios 210 and 220; and level 3 studio 310, breakout rooms, and advanced prototyping. West access is via Etcheverry Plaza at level 1; east access is via LeRoy Avenue at level 2. Dimensions and circulation waypoints are approximate.</p><p><strong>Only urgent rescues:</strong> all eight occupants start in heat and smoke. No low-risk bystanders are added.</p><p><strong>Coordinated crews:</strong> choose 1–3 firefighters. Each can escort up to two people. A joint assignment search chooses non-overlapping single- and two-person jobs, balancing danger, travel, and detours. Firefighters release escorts as soon as a low-heat, low-smoke route outside is available; people then walk out independently.</p><p><strong>Live changes:</strong> spreading fire recalculates all crew assignments each simulated second. Walking occupants also recheck their routes. If fire cuts their way off, they stop and request assistance. The fire model and priority score are illustrative, not validated emergency guidance or a globally optimal time-dependent rescue plan.</p><p><a href="${SOURCES.guide}" target="_blank" rel="noopener noreferrer">UC Berkeley floor guide</a> · <a href="${SOURCES.entrances}" target="_blank" rel="noopener noreferrer">Entrance information</a></p><button class="primary-button dialog-done">Back to the simulation</button></dialog>
+
+  <dialog id="about-dialog"><button class="dialog-close square-button" aria-label="Close about dialog">×</button><span class="brand-mark">${icon('flame')}</span><h2>Sentinel</h2><p>This demo follows UC Berkeley’s published Jacobs Hall floor diagrams: basement studios 10 and 10C, metal shop and robotics lab; level 1 makerspaces 110 and 120; level 2 MDes studios 210 and 220; and level 3 studio 310, breakout rooms, and advanced prototyping. West access is via Etcheverry Plaza at level 1; east access is via LeRoy Avenue at level 2. Dimensions and circulation waypoints are approximate.</p><p><strong>Only urgent rescues:</strong> all eight occupants start in heat and smoke. No low-risk bystanders are added.</p><p><strong>Coordinated crews:</strong> choose 1–3 firefighters. Each can escort up to two people. A joint assignment search chooses non-overlapping single- and two-person jobs, balancing danger, travel, and detours. Firefighters release escorts as soon as a low-heat, low-smoke route outside is available; people then walk out independently.</p><p><strong>Live changes:</strong> spreading fire recalculates all crew assignments each simulated second. Walking occupants also recheck their routes. If fire cuts their way off, they stop and request assistance. The fire model and priority score are illustrative, not validated emergency guidance or a globally optimal time-dependent rescue plan.</p><p><a href="${SOURCES.guide}" target="_blank" rel="noopener noreferrer">UC Berkeley floor guide</a> · <a href="${SOURCES.entrances}" target="_blank" rel="noopener noreferrer">Entrance information</a></p><button class="primary-button dialog-done">Back to the simulation</button></dialog>
 `;
 
 let view;
