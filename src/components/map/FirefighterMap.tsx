@@ -3,6 +3,7 @@ import { BuildingView3D } from '../building3d/BuildingView3D'
 import { buildHazards, buildMarkers, buildPaths } from '../building3d/sceneData'
 import { useSentinel } from '../../store'
 import { useCivilians, useNodes, useResponders } from '../../store/selectors'
+import { CameraStrip } from './CameraStrip'
 import { FloorSelector } from './FloorSelector'
 import { LastUpdated } from './LastUpdated'
 import { Legend } from './Legend'
@@ -99,6 +100,7 @@ export function FirefighterMap() {
         </div>
         <PriorityList className="w-64 shrink-0 border-l border-outline" />
       </div>
+      <CameraStrip />
     </>
   )
 }
