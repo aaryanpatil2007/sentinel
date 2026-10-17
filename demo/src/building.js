@@ -33,7 +33,11 @@ export const ROOMS = [
 // Incident props are fictional; the public diagrams do not specify locked doors or debris.
 export const BATHROOMS = LEVELS.map(floor=>({id:`WC${floor}`,floor,x:floor===1?-13.5:14,z:-4,w:4,d:5,label:'Restrooms',kind:'bathroom'}));
 // Deliberate demo adaptation: a clear connection between 332 and studio 310.
-export const INTERIOR_DOORS = [{id:'apt-studio-door',floor:3,rooms:['APT','310'],x:-10.5,z:-2,width:1.8}];
+export const INTERIOR_DOORS = [
+  {id:'apt-studio-door',floor:3,rooms:['APT','310'],x:-10.5,z:-2,width:1.8,label:'Connecting door'},
+  {id:'10c-side-door',floor:0,rooms:['10C'],x:-9,z:.6,width:1.2,label:'Side door · force entry',forceEdge:['10c-side-door','10c-front-aisle']},
+  {id:'robot-side-door',floor:0,rooms:['ROBOT'],x:-8.5,z:7.8,width:1.8,label:'Lab side door'},
+];
 export const LOCKED_ROOMS = new Set(['120A','120B','210A','310A']);
 // Equipment types are grounded in Berkeley's current equipment/space guides and
 // 2024 interior photographs. This is a selective arrangement, not an inventory survey.
@@ -46,8 +50,8 @@ export const FURNISHINGS = [
   furnishing('10c-board','10C','whiteboard',-5,-7.6,2.2,.6,1.5),
   ...[1.6,8.3].flatMap((x,i)=>[-5.7,-2].map((z,j)=>furnishing(`10-bench-${i}-${j}`,'10','workbench',x,z,3.1,2.3,1))),
   furnishing('10-screen','10','display',5,-7.8,3.6,.5,1.7),
-  furnishing('robot-bench','ROBOT','electronics',-5.8,8,3,1.8,1.15),
-  furnishing('video-kit','ROBOT','camera',5.8,8,1.5,1.5,1.8),
+  furnishing('robot-bench','ROBOT','electronics',-5.8,9.5,3,1.8,1.15),
+  furnishing('video-kit','ROBOT','camera',5.8,9.5,1.5,1.5,1.8),
   furnishing('shopbot','120','cnc',-6.7,-5.8,4.2,2.5,1.3,{label:'ShopBot · woodshop'}),
   furnishing('sawstop','120','tableSaw',-2.5,-2,2.1,1.8,1.05),
   furnishing('wood-saw','120','bandsaw',-8.2,-1.7,1.2,1.3,1.7),
@@ -174,12 +178,20 @@ export function createBuilding() {
   }
 
   // Follow the clear front aisle, rather than cutting through teaching tables.
-  for(const door of INTERIOR_DOORS)add(door.id,door.floor,door.x,door.z,'door','Studio 310 connecting door');
+  for(const door of INTERIOR_DOORS)add(door.id,door.floor,door.x,door.z,'door',door.label);
   add('studio-left-aisle',3,-9.8,0,'hall','Studio 310 clear front aisle');
   add('studio-middle-aisle',3,0,0,'hall','Studio 310 main doorway approach');
   link('e3','dAPT','door');link('rAPT','apt-studio-door','door');
   link('apt-studio-door','studio-left-aisle','door');
   link('studio-left-aisle','studio-middle-aisle');link('studio-middle-aisle','d310','door');
+
+  // Longer side-door routes remain usable after basement flames close the short doorways.
+  add('10c-side-approach',0,-12,.6,'hall','Basement workshop-side passage');
+  add('10c-front-aisle',0,-5,.6,'hall','Studio 10C clear aisle');
+  link('c0-1','10c-side-approach');link('10c-side-approach','10c-side-door','door');
+  link('10c-side-door','10c-front-aisle','door');link('10c-front-aisle','r10C');
+  Object.assign(edges.get(key('10c-side-door','10c-front-aisle')),{locked:true,forceable:true,room:'Studio 10C side door'});
+  link('b0-1','robot-side-door','door');link('robot-side-door','rROBOT','door');
 
   add('west-exit',1,23,5,'exit','Etcheverry Plaza entrance');
   add('east-exit',2,-23,3,'exit','LeRoy Avenue entrance');
@@ -188,8 +200,6 @@ export function createBuilding() {
   link('w1','west-exit');link('e2','east-exit');
   link('west-exit','safe');link('east-exit','safe-east');link('safe','safe-east','outside');
   edges.get(key('w1','w2')).blocked=true;
-  edges.get(key('c0-2','c0-3')).blocked=true;
-  edges.get(key('b0-2','b0-3')).blocked=true;
   // Furnishings are static: check each whole edge once. Movement still checks
   // arbitrary swept segments; route searches only need to recheck changing fire.
   for(const edge of edges.values()){edge.solidClear=segmentClear({obstacles:OBSTACLES},nodes.get(edge.a),nodes.get(edge.b),{ignoreFire:true});if(!edge.solidClear){edge.blocked=true;edge.obstruction=true;}}

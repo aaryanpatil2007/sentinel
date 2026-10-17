@@ -107,7 +107,7 @@ export class BuildingView {
         this.box(group,[room.w-.15,.08,room.d-.2],[room.x,y+.2,room.z],room.kind==='maker'||room.kind==='shop'?0xd0dce1:0xe5e7e0);
         // Low, translucent partitions expose useful detail without hiding occupants.
         const front=room.z>5?room.z-room.d/2:Math.min(1.4,room.z+room.d/2),back=room.z>5?room.z+room.d/2:room.z-room.d/2;
-        const depth=Math.abs(back-front),middle=(back+front)/2,wall={transparent:true,opacity:.68};
+        const wall={transparent:true,opacity:.68};
         for(const x of [room.x-room.w/2,room.x+room.w/2]){
           const opening=INTERIOR_DOORS.find(d=>d.rooms.includes(room.id)&&Math.abs(d.x-x)<.01);
           const spans=opening?[[Math.min(back,front),opening.z-opening.width/2],[opening.z+opening.width/2,Math.max(back,front)]]:[[Math.min(back,front),Math.max(back,front)]];
@@ -135,7 +135,8 @@ export class BuildingView {
       }
       for(const door of INTERIOR_DOORS.filter(d=>d.floor===f)){
         this.box(group,[.6,.07,door.width],[door.x,y+.32,door.z],0x7da89b);
-        this.roomLabels.push(this.label(group,'Connecting door',[door.x,y+1.1,door.z],'small-room-label'));
+        const label=this.label(group,door.label,[door.x,y+1.1,door.z],'small-room-label');this.roomLabels.push(label);
+        if(door.forceEdge){const panel=this.box(group,[.12,.85,door.width],[door.x,y+.7,door.z],0xc58a3a,{transparent:true,opacity:.8});this.doorVisuals.set(door.id,{panel,label,edge:key(...door.forceEdge)});}
       }
       for(const prop of OBSTACLES.filter(p=>p.floor===f)){
         makeFurnishing(this,group,prop,y);
@@ -286,7 +287,7 @@ export class BuildingView {
     }
     for(const [id,label]of this.assemblyLabels){const count=this.sim.people.filter(p=>p.status==='rescued'&&p.node===id).length;label.element.textContent=count?`✓ Safe exit · ${count} safe`:'✓ Safe exit';}
     for(const [id,haze]of this.smokeLayers){const node=this.sim.building.nodes.get(id);haze.material.opacity=this.smokeVisible?Math.min(.32,node.smoke*.36):0;}
-    for(const [room,{panel,label}]of this.doorVisuals){const door=this.sim.building.edges.get(key(`r${room}`,`d${room}`));panel.visible=door.locked;label.element.textContent=door.locked?'Locked':'Forced open';label.element.classList.toggle('forced-open',!door.locked);}
+    for(const [room,{panel,label,edge}]of this.doorVisuals){const door=this.sim.building.edges.get(edge??key(`r${room}`,`d${room}`));panel.visible=door.locked;label.element.textContent=door.locked?'Locked':'Forced open';label.element.classList.toggle('forced-open',!door.locked);}
     for(const front of this.sim.building.fires){
       const fire=this.fires.get(front.id)??this.makeFire(front),lobes=fireLobes(front);
       fire.group.visible=this.floor===null||front.floor===this.floor;
