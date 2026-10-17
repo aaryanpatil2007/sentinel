@@ -48,7 +48,7 @@ Circulation is intentionally adjusted for the demonstration, using secondary ais
 
 ## Fire placement and visible strategy changes
 
-A ground-floor corridor fire blocks the direct west approach to the left-hand rescue rooms, so a crew entering from outside uses the LeRoy entrance and descends the east stair. A third-floor through-passage fire separates the two upper-floor rescues, requiring a descent to level 2 and ascent via the opposite stair. The same graph without fire offers a direct west approach and a same-floor upper route. Regression tests explicitly compare these route choices and require substantial detours, as well as complete rescue outcomes for fixed/spreading fire with 1, 2, and 3 firefighters.
+A ground-floor corridor fire blocks the direct west approach, so crews start at the LeRoy safe exit and enter directly. On floor 3, a localized fire closes only the left passage. A deliberately added connecting door between advanced prototyping (332) and studio 310 provides a same-floor bypass: enter the side room, cross the studio’s clear front aisle, and exit through its main door toward person 8 in the restrooms. Both shared partitions have a visible opening. This doorway is a demo adaptation rather than a claim about the surveyed floor plan. Local sprinkler protection limits this fire’s growth to preserve the bypass in spreading mode. Tests compare this route with the fire-free corridor and verify that closing the connecting door restores the longer stair detour. All eight occupants must reach safety with fixed/spreading fire and 1, 2, or 3 firefighters.
 
 ## Rescue rules
 

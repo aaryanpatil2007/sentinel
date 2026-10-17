@@ -26,12 +26,14 @@ export const ROOMS = [
   {id:'220',floor:2,x:-5,z:-2,w:10,d:13,label:'MDes teaching studio 220',kind:'studio'},
   {id:'210',floor:2,x:5,z:-2,w:10,d:13,label:'MDes studio 210',kind:'studio'},
   ...['220A','220B','210C','210B','210A'].map((id,i)=>({id,floor:2,x:-8+i*4.5,z:8,w:4.3,d:5,label:`Room ${id}`,kind:'lab'})),
-  {id:'APT',floor:3,x:-13,z:-5,w:6,d:8,label:'Advanced prototyping',kind:'maker'},
-  {id:'310',floor:3,x:0,z:-2,w:22,d:13,label:'Teaching studio 310',kind:'studio'},
+  {id:'APT',floor:3,x:-13,z:-5,w:5,d:8,label:'Advanced prototyping',kind:'maker'},
+  {id:'310',floor:3,x:0,z:-2,w:21,d:13,label:'Teaching studio 310',kind:'studio'},
   ...['310D','310C','310B','310A'].map((id,i)=>({id,floor:3,x:-8+i*5,z:8,w:4.8,d:5,label:`Breakout ${id}`,kind:'meeting'})),
 ];
 // Incident props are fictional; the public diagrams do not specify locked doors or debris.
 export const BATHROOMS = LEVELS.map(floor=>({id:`WC${floor}`,floor,x:floor===1?-13.5:14,z:-4,w:4,d:5,label:'Restrooms',kind:'bathroom'}));
+// Deliberate demo adaptation: a clear connection between 332 and studio 310.
+export const INTERIOR_DOORS = [{id:'apt-studio-door',floor:3,rooms:['APT','310'],x:-10.5,z:-2,width:1.8}];
 export const LOCKED_ROOMS = new Set(['120A','120B','210A','310A']);
 // Equipment types are grounded in Berkeley's current equipment/space guides and
 // 2024 interior photographs. This is a selective arrangement, not an inventory survey.
@@ -67,7 +69,7 @@ export const FURNISHINGS = [
   furnishing('310d-table','310D','meeting',-6.65,8.6,1.4,1.7,1),
   furnishing('310b-table','310B','meeting',3.35,8.6,1.4,1.7,1),
   furnishing('form-bank','APT','resinPrinter',-14.5,-5.8,1.5,1.7,1.7,{label:'332 · advanced printing'}),
-  furnishing('fortus','APT','enclosedPrinter',-11.3,-5.8,1.7,1.9,1.9),
+  furnishing('fortus','APT','enclosedPrinter',-11.6,-5.8,1.5,1.9,1.9),
   furnishing('resin-bench','APT','resinPrinter',-14.5,-2.5,1.5,1.7,1.7),
 ];
 export const INCIDENT_PROPS = [
@@ -162,7 +164,7 @@ export function createBuilding() {
     if(f>0){link(`e${f-1}`,`e${f}`,'stairs');link(`w${f-1}`,`w${f}`,'stairs');}
   }
   for(const room of [...ROOMS,...BATHROOMS]){
-    const id=`r${room.id}`;add(id,room.floor,room.x,room.kind==='bathroom'?room.z+1:room.z,room.kind==='bathroom'?'bathroom':'room',room.label);
+    const id=`r${room.id}`;add(id,room.floor,room.x,room.id==='APT'?-2:room.kind==='bathroom'?room.z+1:room.z,room.kind==='bathroom'?'bathroom':'room',room.label);
     const index=xs.reduce((best,x,i)=>Math.abs(x-room.x)<Math.abs(xs[best]-room.x)?i:best,0);
     const door=`d${room.id}`,doorZ=room.z>5?5.5:Math.min(1.4,room.z+room.d/2);
     add(door,room.floor,room.x,doorZ,'door',`${room.label} doorway`);
@@ -170,6 +172,14 @@ export function createBuilding() {
     if(LOCKED_ROOMS.has(room.id))Object.assign(edges.get(key(id,door)),{locked:true,forceable:true,room:room.label});
     if(room.z>5)link(door,`b${room.floor}-${index}`,'door');
   }
+
+  // Follow the clear front aisle, rather than cutting through teaching tables.
+  for(const door of INTERIOR_DOORS)add(door.id,door.floor,door.x,door.z,'door','Studio 310 connecting door');
+  add('studio-left-aisle',3,-9.8,0,'hall','Studio 310 clear front aisle');
+  add('studio-middle-aisle',3,0,0,'hall','Studio 310 main doorway approach');
+  link('e3','dAPT','door');link('rAPT','apt-studio-door','door');
+  link('apt-studio-door','studio-left-aisle','door');
+  link('studio-left-aisle','studio-middle-aisle');link('studio-middle-aisle','d310','door');
 
   add('west-exit',1,23,5,'exit','Etcheverry Plaza entrance');
   add('east-exit',2,-23,3,'exit','LeRoy Avenue entrance');

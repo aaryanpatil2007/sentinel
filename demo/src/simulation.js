@@ -36,13 +36,13 @@ export class RescueSimulation {
       {id:'metal-fire',floor:0,x:-13,z:-5,radius:1.65},
       {id:'maker-fire',floor:1,x:5,z:3.5,radius:1.3},
       {id:'mdes-fire',floor:2,x:-5,z:-2,radius:1.5},
-      {id:'prototype-fire',floor:3,x:0,z:3.5,radius:1.3},
+      {id:'prototype-fire',floor:3,x:-12.5,z:3.5,radius:1.3,maxGrowth:.35},
     ];
     for(const fire of this.building.fires)fire.initialRadius=fire.radius;
-    for(const [id,heat]of [['rMETAL',.90],['c1-4',.92],['r220',.86],['c3-3',.88]])this.building.nodes.get(id).heat=heat;
+    for(const [id,heat]of [['rMETAL',.90],['c1-4',.92],['r220',.86],['c3-0',.88]])this.building.nodes.get(id).heat=heat;
     for(const [i,p]of this.people.entries())Object.assign(this.building.nodes.get(p.node),{heat:[.4,.5,.49,.57,.39,.46,.42,.37][i],smoke:[.72,.8,.78,.88,.7,.76,.74,.68][i]});
     Object.assign(this.building.nodes.get('rROBOT'),{heat:.5,smoke:.8});
-    this.firefighters=Array.from({length:teamSize},(_,i)=>({id:i+1,color:UNIT_COLORS[i],node:'safe',next:null,progress:0,pickups:[],target:null,carrying:[],path:[],escapePath:[],handoff:null,phase:'ready',action:null,reversing:false,routeCost:0}));
+    this.firefighters=Array.from({length:teamSize},(_,i)=>({id:i+1,color:UNIT_COLORS[i],node:'safe-east',next:null,progress:0,pickups:[],target:null,carrying:[],path:[],escapePath:[],handoff:null,phase:'ready',action:null,reversing:false,routeCost:0}));
     this.log(`${teamSize} firefighter${teamSize===1?'':'s'} ready. Eight occupants in immediate danger.`, 'warning');
     this.log('West stair 1–2 and a basement passage are blocked.', 'warning');
     this.plan(true);
@@ -187,7 +187,7 @@ export class RescueSimulation {
     if(!this.containmentStarted&&this.time>=30){
       this.containmentStarted=true;this.log('Sprinklers control the fire fronts. Ventilation begins clearing protected passages.','success');this.lastPlan=-Infinity;
     }
-    for(const fire of this.building.fires)fire.radius=Math.min(fire.initialRadius+2.15,fire.radius+dt*(this.containmentStarted?.004:.065));
+    for(const fire of this.building.fires)fire.radius=Math.min(fire.initialRadius+(fire.maxGrowth??2.15),fire.radius+dt*(this.containmentStarted?.004:.065));
     this.building.hazardVersion++;
     for(const n of nodes.values()){
       if(['safe','exit','rescue'].includes(n.type))continue;
@@ -202,7 +202,7 @@ export class RescueSimulation {
       if(n.type==='room')for(const below of nodes.values())if(below.type==='room'&&below.floor===n.floor-1&&below.heat>.65&&Math.hypot(n.x-below.x,n.z-below.z)<5){
         heatIn=Math.max(heatIn,(below.heat-n.heat)*.3);smokeIn=Math.max(smokeIn,(below.heat-n.smoke)*.8);
       }
-      const source=['rMETAL','c1-4','r220','c3-3'].includes(n.id);
+      const source=['rMETAL','c1-4','r220','c3-0'].includes(n.id);
       const growth=n.heat>(n.type==='room'?.42:.6)?.003+n.heat*.007:0;
       const cooling=this.containmentStarted&&!source?n.heat*.032:0,venting=this.containmentStarted?n.smoke*.022:0;
       const heatGrowth=this.containmentStarted?0:growth;
