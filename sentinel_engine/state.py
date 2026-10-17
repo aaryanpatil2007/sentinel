@@ -21,6 +21,14 @@ class IncidentState:
         self.events: list[dict] = []
         self._counters: dict[str, int] = {}
 
+    def reset(self) -> None:
+        """Clear the incident in place; API handlers keep a reference to this object."""
+        self.entities.clear()
+        self.hazards.clear()
+        self.routes.clear()
+        self.events.clear()
+        self._counters.clear()
+
     def _next_id(self, prefix: str) -> str:
         self._counters[prefix] = self._counters.get(prefix, 0) + 1
         return f"{prefix}_{self._counters[prefix]:03d}"

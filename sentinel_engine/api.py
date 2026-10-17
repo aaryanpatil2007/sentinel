@@ -71,6 +71,11 @@ class IgniteIn(BaseModel):
     node_id: str
 
 
+class CivilianLocationIn(BaseModel):
+    civilian_id: str
+    graph_node_id: str
+
+
 def _current_risk(app: FastAPI) -> dict:
     if not app.state.fire_nodes:
         return {}
@@ -208,6 +213,30 @@ def create_app(building_path=None) -> FastAPI:
                                responder_en_route=en_route)
         incident.append_event("advisory_drafted", {"civilian_id": civilian_id})
         return adv
+
+    @app.get("/civilians/{civilian_id}/evacuation")
+    def civilian_evacuation(civilian_id: str):
+        civ = incident.get_entity(civilian_id)
+        if civ is None or civ["entity_type"] != "civilian":
+            raise HTTPException(404, f"civilian {civilian_id} not found")
+        if not civ.get("graph_node_id"):
+            return {"status": "no_location"}
+        return nearest_exit_route(building, civ["graph_node_id"],
+                                  hazards=incident.get_hazards(),
+                                  risk=_current_risk(app),
+                                  route_id=f"EVAC_{civilian_id}")
+
+    @app.post("/civilians/location")
+    def civilian_location(body: CivilianLocationIn):
+        civ = incident.get_entity(body.civilian_id)
+        if civ is None or civ["entity_type"] != "civilian":
+            raise HTTPException(404, f"civilian {body.civilian_id} not found")
+        if body.graph_node_id not in building.nodes:
+            raise HTTPException(400, f"unknown node {body.graph_node_id}")
+        return incident.update_entity_location(body.civilian_id,
+                                               graph_node_id=body.graph_node_id,
+                                               source="civilian_report",
+                                               position_status="reported")
 
     @app.get("/advisories")
     def all_advisories():
@@ -378,6 +407,12 @@ def create_app(building_path=None) -> FastAPI:
                          "requires_command_approval": True})
         incident.append_event("rescue_prioritized", {"count": len(recs)})
         return {"recommendations": recs}
+
+    @app.post("/incident/reset")
+    def incident_reset():
+        incident.reset()
+        app.state.fire_nodes.clear()
+        return {"reset": True}
 
     @app.get("/incident/state")
     def incident_state():

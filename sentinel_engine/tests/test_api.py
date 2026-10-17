@@ -117,3 +117,54 @@ def test_ignite_demo_control(client):
     assert "F2_CORRIDOR_EAST" in r["fire_nodes"]
     hazards = client.get("/hazards").json()
     assert any(h["hazard_type"] == "fire" and h["verified"] for h in hazards)
+
+
+def _seed_310(client):
+    body = {"text": "Studio 310, smoke is coming under the door."}
+    return client.post("/civilians/report", json=body).json()["civilian"]["entity_id"]
+
+
+def test_incident_reset_clears_everything(client):
+    _seed_310(client)
+    client.post("/spread/ignite", json={"node_id": "F2_CORRIDOR_EAST"})
+    assert client.post("/incident/reset").json() == {"reset": True}
+    state = client.get("/incident/state").json()
+    assert state["entities"] == []
+    assert state["hazards"] == []
+    assert state["routes"] == []
+    assert state["last_event_seq"] == 0
+    assert client.get("/spread/prediction").json()["fire_nodes"] == []
+    assert _seed_310(client) == "CIV_001"
+
+
+def test_civilian_evacuation_returns_route_without_side_effects(client):
+    cid = _seed_310(client)
+    before = client.get("/incident/state").json()
+    route = client.get(f"/civilians/{cid}/evacuation").json()
+    assert route["route_id"] == f"EVAC_{cid}"
+    assert route["status"] == "candidate"
+    assert route["nodes"][0] == "F3_STUDIO_310"
+    assert route["nodes"][-1] in {"F1_ENTRANCE_MAIN", "F1_ENTRANCE_EAST"}
+    after = client.get("/incident/state").json()
+    assert after["routes"] == []
+    assert after["last_event_seq"] == before["last_event_seq"]
+
+
+def test_civilian_evacuation_errors(client):
+    assert client.get("/civilians/CIV_999/evacuation").status_code == 404
+    cid = client.post("/civilians", json={}).json()["entity_id"]
+    assert client.get(f"/civilians/{cid}/evacuation").json() == {"status": "no_location"}
+
+
+def test_civilian_location_moves_civilian(client):
+    cid = _seed_310(client)
+    moved = client.post("/civilians/location",
+                        json={"civilian_id": cid, "graph_node_id": "EXT_STAGING"}).json()
+    assert moved["graph_node_id"] == "EXT_STAGING"
+    assert moved["world_position"]["floor_id"] == "F1"
+    missing = client.post("/civilians/location",
+                          json={"civilian_id": "CIV_999", "graph_node_id": "EXT_STAGING"})
+    assert missing.status_code == 404
+    bad_node = client.post("/civilians/location",
+                           json={"civilian_id": cid, "graph_node_id": "NOPE"})
+    assert bad_node.status_code == 400

@@ -5,6 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "engine": ".venv/bin/uvicorn sentinel_engine.api:app --port 8787",
+    "engine:test": ".venv/bin/python -m pytest sentinel_engine/tests -q",
+    "demo": "node scripts/demo.mjs",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "test": "vitest run",
