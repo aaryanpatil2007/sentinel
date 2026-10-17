@@ -6,6 +6,12 @@ type Vec3 = [number, number, number]
 /** The `view` object the demo builders expect (box/material/line), with every color mapped onto the token palette. */
 export class DemoViewAdapter {
   private materials = new Map<string, THREE.MeshStandardMaterial>()
+  private lineMaterials = new Map<string, THREE.LineBasicMaterial>()
+
+  /** True for materials this adapter caches and will dispose itself. */
+  owns(material: THREE.Material): boolean {
+    return [...this.materials.values(), ...this.lineMaterials.values()].some((m) => m === material)
+  }
 
   material(color: number, options: THREE.MeshStandardMaterialParameters = {}): THREE.MeshStandardMaterial {
     const mapped = paletteColor(color)
@@ -27,7 +33,14 @@ export class DemoViewAdapter {
 
   line(parent: THREE.Object3D, points: Vec3[], color: number, opacity = 1): THREE.Line {
     const geometry = new THREE.BufferGeometry().setFromPoints(points.map((p) => new THREE.Vector3(...p)))
-    const line = new THREE.Line(geometry, new THREE.LineBasicMaterial({ color: paletteColor(color), transparent: opacity < 1, opacity }))
+    const mapped = paletteColor(color)
+    const key = `${mapped}-${opacity}`
+    let material = this.lineMaterials.get(key)
+    if (!material) {
+      material = new THREE.LineBasicMaterial({ color: mapped, transparent: opacity < 1, opacity })
+      this.lineMaterials.set(key, material)
+    }
+    const line = new THREE.Line(geometry, material)
     parent.add(line)
     return line
   }
@@ -35,5 +48,7 @@ export class DemoViewAdapter {
   dispose(): void {
     for (const m of this.materials.values()) m.dispose()
     this.materials.clear()
+    for (const m of this.lineMaterials.values()) m.dispose()
+    this.lineMaterials.clear()
   }
 }

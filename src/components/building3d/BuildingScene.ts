@@ -16,6 +16,7 @@ const WALL_HEIGHT = 1.2
 const ROUTE_LIFT = 0.6
 const DASH = 0.8
 const GAP = 0.5
+const MIN_SEGMENT = 1e-4
 const CAMERA_HOME = new THREE.Vector3(34, 36, 44)
 
 const PLATE_COLOR: Record<Footprint['kind'], number> = {
@@ -84,7 +85,6 @@ export class BuildingScene {
   update(input: SceneInput): void {
     const floorChanged = this.input?.floor !== input.floor
     this.input = input
-    this.applyFloorVisibility()
     this.rebuildDynamic()
     if (floorChanged) this.frameFloor()
   }
@@ -97,10 +97,11 @@ export class BuildingScene {
     this.controls.dispose()
     this.clearGroup(this.dynamic)
     this.scene.traverse((o) => {
-      if (o instanceof THREE.Mesh || o instanceof THREE.Line) o.geometry.dispose()
+      if (o instanceof THREE.Mesh || o instanceof THREE.Line || o instanceof THREE.Points) o.geometry.dispose()
     })
     for (const m of this.materials.values()) m.dispose()
     this.view.dispose()
+    this.renderer.forceContextLoss()
     this.renderer.dispose()
     this.renderer.domElement.remove()
     this.labels.domElement.remove()
@@ -211,9 +212,17 @@ export class BuildingScene {
 
   // ---------- dynamic layers ----------
 
+  private isShared(material: THREE.Material): boolean {
+    return this.view.owns(material) || new Set(this.materials.values()).has(material)
+  }
+
   private clearGroup(group: THREE.Group): void {
     group.traverse((o) => {
-      if (o instanceof THREE.Mesh) o.geometry.dispose()
+      if (o instanceof THREE.Mesh || o instanceof THREE.Line || o instanceof THREE.Points) {
+        o.geometry.dispose()
+        const materials = Array.isArray(o.material) ? o.material : [o.material]
+        for (const m of materials) if (!this.isShared(m)) m.dispose()
+      }
       if (o instanceof CSS2DObject) o.element.remove()
     })
     group.clear()
@@ -280,13 +289,19 @@ export class BuildingScene {
     this.hazardPicks.push(group)
   }
 
-  private segment(from: THREE.Vector3, to: THREE.Vector3, radius: number, material: THREE.Material, floor: FloorId): THREE.Mesh {
+  private segment(from: THREE.Vector3, to: THREE.Vector3, radius: number, material: THREE.Material, floor: FloorId): THREE.Mesh | null {
     const delta = to.clone().sub(from)
+    if (delta.length() < MIN_SEGMENT) return null
     const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, delta.length(), 8), material)
     mesh.position.copy(from.clone().add(to).multiplyScalar(0.5))
     mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), delta.normalize())
     mesh.userData = { floor }
     return mesh
+  }
+
+  private addSegment(from: THREE.Vector3, to: THREE.Vector3, radius: number, material: THREE.Material, floor: FloorId): void {
+    const mesh = this.segment(from, to, radius, material, floor)
+    if (mesh) this.dynamic.add(mesh)
   }
 
   private addPath(path: ScenePath): void {
@@ -296,14 +311,14 @@ export class BuildingScene {
     for (let i = 1; i < points.length; i++) {
       const floor = path.points[i].floor_id
       if (path.variant === 'rescue') {
-        this.dynamic.add(this.segment(points[i - 1], points[i], radius, material, floor))
+        this.addSegment(points[i - 1], points[i], radius, material, floor)
         continue
       }
       const length = points[i - 1].distanceTo(points[i])
       for (let start = 0; start < length; start += DASH + GAP) {
         const a = points[i - 1].clone().lerp(points[i], start / length)
         const b = points[i - 1].clone().lerp(points[i], Math.min(1, (start + DASH) / length))
-        this.dynamic.add(this.segment(a, b, radius, material, floor))
+        this.addSegment(a, b, radius, material, floor)
       }
     }
   }
