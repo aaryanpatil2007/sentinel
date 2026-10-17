@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "node scripts/serve.mjs",
-    "build": "node scripts/build.mjs",
+    "build": "node scripts/build.mjs && node scripts/build-ar.mjs",
     "preview": "node scripts/serve.mjs --dist",
-    "test": "node --test tests/*.test.js"
+    "test": "node --test tests/*.test.js",
+    "build:ar": "node scripts/build-ar.mjs"
   }
 }

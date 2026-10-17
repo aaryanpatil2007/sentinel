@@ -16,7 +16,7 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 - OpenAPI docs: `http://localhost:8787/docs`
 - CORS is open (`*`) for local development.
 - Reproducible demo (no server needed): `.venv/bin/python -m sentinel_engine.demo`
-- Tests: `.venv/bin/python -m pytest sentinel_engine/tests` (61 tests)
+- Tests: `.venv/bin/python -m pytest sentinel_engine/tests` (83 tests)
 
 ## Coordinate system
 
@@ -150,6 +150,52 @@ POST /rescue/prioritize
 ```
 Proposals only — no auto-dispatch.
 
+### Guidance packets (blueprint / AR view)
+One call returns everything a first-person guidance renderer needs for one persona:
+```
+GET /guidance/responder/UNIT_ALPHA     # route to the assigned civilian (snapped to the responder's position)
+GET /guidance/civilian/CIV_001         # nearest-exit route recomputed against current hazards + draft advisory text
+```
+Response (truncated):
+```json
+{"packet_version": "1", "persona": "responder", "status": "candidate", "requires_command_approval": true,
+ "route_id": "ROUTE_001", "coordinate_frame": "JACOBS_LOCAL", "provenance": "simulated",
+ "entity": {"entity_id": "UNIT_ALPHA", "world_position": {"...": "..."}, "position_status": "reported"},
+ "origin": {"node_id": "F1_ENTRANCE_MAIN", "label": "Main Entrance", "position": {"...": "..."}},
+ "destination": {"node_id": "F2_STUDIO_210", "label": "Studio 210", "kind": "civilian", "entity": {"entity_id": "CIV_001"}},
+ "nodes": ["F1_ENTRANCE_MAIN", "..."], "polyline": ["..."],
+ "render_path": [{"x": 20.0, "y": 0.0, "z": 0.0, "floor_id": "F1", "distance_along_m": 0.0}, "..."],
+ "steps": [{"index": 1, "instruction": "Proceed 8 m to West Corridor (F1)", "turn": "left",
+            "heading_change_degrees": -90.0, "bearing_degrees": 270.0, "distance_m": 8.0,
+            "from_floor_id": "F1", "floor_id": "F1", "start_at_m": 10.0, "arrive_at_m": 18.0,
+            "waypoint": {"...": "..."}, "is_final": false}, "..."],
+ "floors": [{"floor_id": "F1", "elevation_m": 0.0, "on_route": true,
+             "outline": {"x_min": 2.0, "y_min": 0.0, "x_max": 38.0, "y_max": 19.5},
+             "zones": [{"zone_id": "F1_Z_CORRIDOR", "kind": "corridor", "x_min": 8.0, "...": "..."}],
+             "walls": [{"x1": 8.0, "y1": 11.5, "x2": 11.4, "y2": 11.5, "height_m": 2.7, "wall": "N", "zone_id": "F1_Z_CORRIDOR"}],
+             "doors": [{"edge_id": "E012", "zone_id": "F1_Z_CORRIDOR", "wall": "N", "x": 12.0, "y": 11.5, "width_m": 1.2}]}],
+ "hazards": [{"hazard_id": "HAZ_002", "hazard_type": "fire", "verified": false, "on_route": false,
+              "position": {"...": "..."}, "label": "Fire · East Corridor (F2)"}],
+ "risk": {"F2_CORRIDOR_EAST": 1.0, "...": 0.0}, "zone_risk": {"F2_Z_CORRIDOR": 1.0, "...": 0.0},
+ "alternate_render_path": [], "total_distance_m": 42.0, "total_cost": 230.2,
+ "message": null, "disclaimer": "Illustrative simulated building geometry. Candidate route for command review; ..."}
+```
+- `render_path` is the drawable/walkable path: the node polyline densified so stair hops become
+  ramps inside the stairwell footprint, with cumulative `distance_along_m`. Camera and markers
+  use it; `polyline` stays the raw node positions.
+- `steps[].turn` ∈ `start | straight | slight_left | left | sharp_left | slight_right | right |
+  sharp_right | u_turn | up | down | continue` (`continue` = first flat step after stairs, where a
+  relative turn is meaningless). `start_at_m`/`arrive_at_m` index into `render_path`.
+- `floors[].zones/walls/doors` are derived from the building's zone rectangles: walls are rectangle
+  sides minus 1.2 m door gaps wherever a same-floor edge crosses a zone boundary. Also served alone
+  at `GET /building/geometry` for a building view.
+- `status` is `candidate | unreachable | no_active_route | no_location`; packets never say "safe".
+- Civilian packets carry `message` (the draft advisory, pending command approval) and no `risk`.
+- `POST /demo/scenario {"block_west_stairwell": false}` resets state and seeds the standard scenario
+  (demo control). The guidance page in `demo/ar.html` polls these endpoints when connected live
+  and redraws when the packet signature changes; `demo/jacobs-ar.html` is the same page with sample
+  packets inlined (regenerate with `python -m sentinel_engine.export_guidance`).
+
 ## Polling
 
 - `GET /incident/state` — full picture: `{building_id, coordinate_frame, timestamp,
@@ -158,7 +204,7 @@ Proposals only — no auto-dispatch.
   `{seq, timestamp, event_type, payload}`. Event types: `entity_registered`,
   `entity_location_updated`, `civilian_report`, `observation_ingested`,
   `hazard_added`, `hazard_removed`, `route_computed`, `route_updated`,
-  `advisory_drafted`, `rescue_prioritized`.
+  `advisory_drafted`, `rescue_prioritized`, `demo_scenario_seeded`.
 - Suggested loop: poll events every 1–2 s; on `route_updated`, refresh routes and
   guidance.
 

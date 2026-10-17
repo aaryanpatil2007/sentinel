@@ -69,7 +69,18 @@ def main() -> int:
     adv = client.get(f"/civilians/{civ_id}/advisory").json()
     print(adv["message"])
 
-    beat("8. Rescue prioritization + shared incident state")
+    beat("8. Guidance packets for the blueprint/AR view")
+    for persona, eid in (("responder", "UNIT_ALPHA"), ("civilian", civ_id)):
+        pk = client.get(f"/guidance/{persona}/{eid}").json()
+        turns = " ".join(s["turn"] for s in pk["steps"])
+        print(f" • {persona} {eid}: {pk['status']} | {len(pk['steps'])} steps | "
+              f"{pk['total_distance_m']} m | floors "
+              f"{[f['floor_id'] for f in pk['floors'] if f.get('on_route')]} | "
+              f"hazards on route {sum(h['on_route'] for h in pk['hazards'])}")
+        print(f"   turns: {turns}")
+    print(" render with: demo/jacobs-ar.html (sample packets) or demo/ar.html?live=1")
+
+    beat("9. Rescue prioritization + shared incident state")
     for r in client.post("/rescue/prioritize").json()["recommendations"]:
         print(f" • {r['civilian_id']}: {r['priority']} (score {r['score']}) "
               f"→ {r['nearest_responder_id']} — {r['reason']}")

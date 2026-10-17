@@ -24,6 +24,17 @@ npm run build
 
 The generated `jacobs-demo.html` is committed so that the repository download works immediately. `dist/` is generated and ignored. The `demo/` folder is independent of the parent application and uses relative asset URLs, so its regular `index.html` also works under a `/demo/` static mount.
 
+## Guidance view (blueprint preview of the AR layer)
+
+Open [`jacobs-ar.html`](jacobs-ar.html) for a first-person, blueprint-style walkthrough of routes computed by the Python engine in `../sentinel_engine`: the **firefighter** route to the reported occupant and the **occupant** route to the nearest exit. It is deliberately schematic (line-drawn walls with door gaps, floor grid, a chevron ribbon for the path, floating waypoint and hazard markers, a turn-by-turn cue card) rather than realistic; the same packet is what a future AR headset or phone view would consume, with the waypoints as world anchors.
+
+- **Sample scenes** are packets exported from the engine's demo scenario (before and after the "west stairwell blocked" reroute). Regenerate them with `.venv/bin/python -m sentinel_engine.export_guidance` from the repository root, then `npm run build:ar`.
+- **Live engine**: start `uvicorn sentinel_engine.api:app --port 8787`, open `ar.html?live=1` (or press **Live engine**), **Seed demo scenario**, then **Block west stairwell** to watch the route redraw. The page polls `GET /guidance/{persona}/{id}` every two seconds.
+- Controls: Walkthrough / Overview (keys `1` / `2`), space to pause, `r` to restart, click a step to jump to it. Deep links: `?scene=…&mode=overview&at=<metres>&paused=1`.
+- Everything shown is a candidate for command review over illustrative simulated geometry. The engine's building model is a simplified sketch (two rooms per floor, two stairwells); porting this demo's researched Jacobs layout into it is a follow-up.
+
+Source: `src/ar/packet.js` (pure helpers, unit-tested), `src/ar/blueprint-view.js` (Three.js renderer), `src/ar/main.js` (shell, HUD, live polling), `scripts/build-ar.mjs` (single-file export).
+
 ## Building reference
 
 The model follows the room groupings and circulation topology in UC Berkeley’s [Jacobs floor guide](https://jacobsinstitute.berkeley.edu/our-spaces-at-a-glance/) and its published diagrams. A translucent outside ground surface, faint excavation faces, and explicit ground/basement labels show which floor is below grade without hiding its occupants or routes:
@@ -76,6 +87,7 @@ Spreading mode recalculates team plans every simulated second. The favorable pre
 - `src/furnishings.js`: recognizable low-poly room equipment and furniture.
 - `src/building-view.js`: Three.js building, per-crew routes, occupant markers, camera controls.
 - `src/main.js` and `src/style.css`: controls and per-unit guidance.
+- `src/ar/`: the engine-driven guidance view (blueprint/AR preview); `sample-packets.js` is generated.
 - `scripts/` and `tests/`: static server, standalone exporter, regression tests.
 
 Three.js is vendored with its MIT license. Optional Google Fonts fall back to system fonts when offline.

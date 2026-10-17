@@ -7,6 +7,8 @@ from pydantic import BaseModel
 
 from .advisories import compose_advisory
 from .building import Building
+from .guidance import build_packet, floor_geometry, snap_index
+from .perception import scenario_observations
 from .routing import compute_route, nearest_exit_route
 from .spread import MonteCarloPredictor, SurrogatePredictor
 from .state import IncidentState
@@ -71,6 +73,10 @@ class IgniteIn(BaseModel):
     node_id: str
 
 
+class ScenarioIn(BaseModel):
+    block_west_stairwell: bool = False
+
+
 def _current_risk(app: FastAPI) -> dict:
     if not app.state.fire_nodes:
         return {}
@@ -132,6 +138,13 @@ def create_app(building_path=None) -> FastAPI:
     def get_graph():
         d = building.to_dict()
         return {"nodes": d["nodes"], "edges": d["edges"]}
+
+    @app.get("/building/geometry")
+    def get_geometry():
+        """Drawable floor geometry: zones, derived walls and doors. Illustrative."""
+        return {"building_id": building.building_id,
+                "coordinate_frame": building.coordinate_frame,
+                "floors": floor_geometry(building), "provenance": "simulated"}
 
     @app.get("/spatial/coordinate-system")
     def coordinate_system():
@@ -252,21 +265,81 @@ def create_app(building_path=None) -> FastAPI:
         if route is None or route["status"] != "candidate":
             return {"status": "no_active_route"}
         # snap: nearest route node on the responder's floor, else route start
-        start_idx = 0
-        wp = responder.get("world_position")
-        if wp:
-            best = None
-            for i, nid in enumerate(route["nodes"]):
-                n = building.nodes[nid]
-                if n.floor_id == wp["floor_id"]:
-                    d = (n.x - wp["x"]) ** 2 + (n.y - wp["y"]) ** 2
-                    if best is None or d < best[0]:
-                        best = (d, i)
-            if best:
-                start_idx = best[1]
+        start_idx = snap_index(building, route["nodes"], responder.get("world_position"))
         return {"route_id": route["route_id"], "status": "candidate",
                 "destination_node": route["destination_node"],
                 "next_steps": route["steps"][start_idx:]}
+
+    def _active_route_for(responder_id: str) -> dict | None:
+        return next((r for r in incident.get_routes()
+                     if r["meta"].get("responder_id") == responder_id), None)
+
+    @app.get("/guidance/responder/{responder_id}")
+    def guidance_packet_responder(responder_id: str):
+        """Guidance packet for the firefighter view: route to the assigned
+        civilian, floor geometry, hazards, predicted risk. Candidate only."""
+        responder = incident.get_entity(responder_id)
+        if responder is None:
+            raise HTTPException(404, f"responder {responder_id} not found")
+        route = _active_route_for(responder_id)
+        civilian = (incident.get_entity(route["meta"].get("civilian_id") or "")
+                    if route else None)
+        packet = build_packet(building, "responder", responder, route,
+                              hazards=incident.get_hazards(), risk=_current_risk(app),
+                              destination_entity=civilian)
+        return packet
+
+    @app.get("/guidance/civilian/{civilian_id}")
+    def guidance_packet_civilian(civilian_id: str):
+        """Guidance packet for the occupant view: nearest-exit route computed
+        against current hazards, plus the draft advisory text. Draft only —
+        command approves what an occupant actually receives."""
+        civ = incident.get_entity(civilian_id)
+        if civ is None:
+            raise HTTPException(404, f"civilian {civilian_id} not found")
+        evac, message = None, None
+        hazards = incident.get_hazards()
+        en_route = any(r["meta"].get("civilian_id") == civilian_id
+                       for r in incident.get_routes())
+        if civ.get("graph_node_id"):
+            evac = nearest_exit_route(building, civ["graph_node_id"], hazards=hazards,
+                                      risk=_current_risk(app), route_id=f"EVAC_{civilian_id}")
+            message = compose_advisory(civ, hazards, evac, building,
+                                       responder_en_route=en_route)["message"]
+        return build_packet(building, "civilian", civ, evac, hazards=hazards, risk={},
+                            message=message, responder_en_route=en_route)
+
+    @app.post("/demo/scenario")
+    def demo_scenario(body: ScenarioIn):
+        """Demo control: reset the incident and seed the standard scenario
+        (two responders, the Studio 210 report, simulated camera observations,
+        one candidate route). Optionally also records the stairwell block."""
+        incident.reset()
+        app.state.fire_nodes.clear()
+        create_responder(ResponderIn(responder_id="UNIT_ALPHA", name="Unit Alpha",
+                                     graph_node_id="F1_ENTRANCE_MAIN"))
+        create_responder(ResponderIn(responder_id="UNIT_BRAVO", name="Unit Bravo",
+                                     graph_node_id="EXT_STAGING"))
+        rep = civilian_report(CivilianReportIn(
+            text="I'm in Studio 210 on the second floor. There's smoke outside "
+                 "and my friend can't walk."))
+        civ_id = rep["civilian"]["entity_id"]
+        for obs in scenario_observations():
+            ingest_observation(ObservationIn(**obs))
+        route = routes_compute(RouteRequest(responder_id="UNIT_ALPHA", civilian_id=civ_id))
+        hazard_ids = []
+        if body.block_west_stairwell:
+            hz = add_hazard(HazardIn(hazard_type="blocked", text="west stairwell",
+                                     default_floor="F2", verified=True,
+                                     source="responder_report",
+                                     description="radio report: west stairwell blocked"))
+            hazard_ids.append(hz["hazard_id"])
+        incident.append_event("demo_scenario_seeded",
+                              {"block_west_stairwell": body.block_west_stairwell})
+        return {"responder_id": "UNIT_ALPHA", "civilian_id": civ_id,
+                "route_id": route["route_id"], "route_status": route["status"],
+                "block_hazard_ids": hazard_ids,
+                "last_event_seq": len(incident.events)}
 
     @app.post("/hazards")
     def add_hazard(body: HazardIn):
