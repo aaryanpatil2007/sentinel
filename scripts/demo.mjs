@@ -13,10 +13,22 @@ const children = [
   spawn('npx', ['vite'], { stdio: 'inherit' }),
 ]
 
-const stop = () => {
+let stopping = false
+const stop = (code = 0) => {
+  if (stopping) return
+  stopping = true
   for (const child of children) child.kill('SIGTERM')
-  process.exit(0)
+  process.exit(code)
 }
-process.on('SIGINT', stop)
-process.on('SIGTERM', stop)
-for (const child of children) child.on('exit', (code) => code && stop())
+process.on('SIGINT', () => stop(0))
+process.on('SIGTERM', () => stop(0))
+for (const child of children) {
+  child.on('error', (err) => {
+    console.error(`Failed to run ${child.spawnargs.join(' ')}: ${err.message}`)
+    stop(1)
+  })
+  child.on('exit', (code, signal) => {
+    if (stopping) return
+    stop(code ?? (signal ? 1 : 0))
+  })
+}

@@ -68,7 +68,7 @@ const RESIDENTS: { lines: Line[]; unread: number }[] = [
       ['responder', 'The west stair is clear right now. Follow the route on your screen.', 11],
       ['resident', 'Is the elevator safe to use?', 10],
       ['responder', 'Do not use the elevator. Take the west stair all the way down.', 10],
-      ['system', 'Route ready · Exit via Main Entrance', 9],
+      ['system', 'Route open · Exit via Main Entrance', 9],
       ['resident', 'Okay, putting shoes on.', 3],
       ['responder', 'Cover your mouth with a cloth. We will meet you at the main entrance.', 2],
     ],

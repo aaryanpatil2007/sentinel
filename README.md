@@ -36,4 +36,6 @@ Demo controls (sliders icon, top right): resident to view as, Go/Stay override, 
 | Store (engine sync, threads, UI) | `src/store/` |
 | Offline recording | `src/data/engine-snapshot.json`, regenerate with `PYTHONPATH=. .venv/bin/python scripts/capture_engine_snapshot.py` |
 
+Not yet built: the 3D view has floor isolation but no exterior shell toggle.
+
 The engine's coordinates (`JACOBS_LOCAL`) and room layout are illustrative, as documented in `sentinel_engine/INTEGRATION.md`. Routes and advisories are decision-support proposals that require command approval.

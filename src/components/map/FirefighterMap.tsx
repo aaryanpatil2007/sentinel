@@ -25,6 +25,7 @@ export function FirefighterMap() {
   const selectedId = useSentinel((s) => s.selectedCivilianId)
   const hoveredId = useSentinel((s) => s.hoveredCivilianId)
   const selectCivilian = useSentinel((s) => s.selectCivilian)
+  const live = useSentinel((s) => s.engineStatus === 'live')
   const simMode = useSentinel((s) => s.simMode)
   const simTool = useSentinel((s) => s.simTool)
   const moveSourceId = useSentinel((s) => s.moveSourceId)
@@ -44,11 +45,11 @@ export function FirefighterMap() {
   const isCivilian = (id: string) => civilians.some((c) => c.entity_id === id)
   const onPickEntity = (id: string) => {
     if (!isCivilian(id)) return
-    if (simMode && simTool === 'move') setMoveSource(id)
+    if (simMode && live && simTool === 'move') setMoveSource(id)
     else selectCivilian(id)
   }
   const onPickNode = (nodeId: string) => {
-    if (!simMode) return
+    if (!simMode || !live) return
     if (simTool === 'fire' || simTool === 'smoke' || simTool === 'blocked') void addHazard(simTool, nodeId)
     else if (simTool === 'move' && moveSourceId) {
       void moveCivilian(moveSourceId, nodeId)
@@ -56,9 +57,9 @@ export function FirefighterMap() {
     }
   }
   const onPickHazard = (hazardId: string) => {
-    if (simMode && simTool === 'remove') void removeHazard(hazardId)
+    if (simMode && live && simTool === 'remove') void removeHazard(hazardId)
   }
-  const pickableNodes = simMode && (simTool === 'fire' || simTool === 'smoke' || simTool === 'blocked' || (simTool === 'move' && moveSourceId !== null))
+  const pickableNodes = live && simMode && (simTool === 'fire' || simTool === 'smoke' || simTool === 'blocked' || (simTool === 'move' && moveSourceId !== null))
   const moveSource = simMode && simTool === 'move' && moveSourceId ? civilians.find((c) => c.entity_id === moveSourceId)?.graph_node_id ?? null : null
 
   return (

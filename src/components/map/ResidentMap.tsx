@@ -5,7 +5,7 @@ import type { ResidentView } from '../../types'
 import { floorOf, instructionMode, instructionsFor, peopleCount, placeLabel } from '../../engine/derive'
 import { fade } from '../../lib/motion'
 import { useSentinel } from '../../store'
-import { effectiveEvacuation, useCivilians, useNodes } from '../../store/selectors'
+import { effectiveEvacuation, useNodes, useViewedCivilian } from '../../store/selectors'
 import { BuildingView3D } from '../building3d/BuildingView3D'
 import { buildHazards, shortLabel } from '../building3d/sceneData'
 import type { SceneMarker, ScenePath } from '../building3d/types'
@@ -30,14 +30,12 @@ export function ResidentMap() {
   const evacuations = useSentinel((s) => s.evacuations)
   const advisories = useSentinel((s) => s.advisories)
   const overlays = useSentinel((s) => s.overlays)
-  const viewingAsId = useSentinel((s) => s.viewingAsId)
   const residentView = useSentinel((s) => s.residentView)
   const setResidentView = useSentinel((s) => s.setResidentView)
   const devGoStay = useSentinel((s) => s.devGoStay)
   const updatedAt = useSentinel((s) => s.updatedAt)
-  const civilians = useCivilians()
   const nodes = useNodes()
-  const civilian = civilians.find((c) => c.entity_id === viewingAsId) ?? civilians[0]
+  const civilian = useViewedCivilian()
 
   const hazards = useMemo(() => buildHazards(snapshot?.hazards ?? [], nodes, graph?.edges ?? []), [snapshot, nodes, graph])
   const evacuation = civilian ? effectiveEvacuation(evacuations[civilian.entity_id], devGoStay) : null

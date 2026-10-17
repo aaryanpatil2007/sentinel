@@ -21,6 +21,13 @@ export function useCivilians(): Entity[] {
   return useMemo(() => civiliansOf(snapshot), [snapshot])
 }
 
+/** The civilian the resident views as; falls back to the first civilian when viewingAsId is unknown. */
+export function useViewedCivilian(): Entity | undefined {
+  const civilians = useCivilians()
+  const viewingAsId = useSentinel((s) => s.viewingAsId)
+  return civilians.find((c) => c.entity_id === viewingAsId) ?? civilians[0]
+}
+
 export function useResponders(): Entity[] {
   const snapshot = useSentinel((s) => s.snapshot)
   return useMemo(() => respondersOf(snapshot), [snapshot])

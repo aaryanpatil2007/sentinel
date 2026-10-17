@@ -33,7 +33,7 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
         <div className="w-full max-w-md rounded-12 border border-outline bg-surface p-6">
           <h1 className="text-18 font-semibold tracking-tightest">Something went wrong</h1>
           <p className="mt-2 text-14 text-on-surface-variant">
-            The demo hit an unexpected state. Resetting restores the mock incident.
+            The demo hit an unexpected state. Resetting restores the scenario incident.
           </p>
           <Button className="mt-4" variant="primary" icon={RotateCcw} onClick={this.reset}>
             Reset demo
