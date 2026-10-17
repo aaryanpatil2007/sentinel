@@ -35,6 +35,7 @@ export type EngineSlice = EngineData & {
   connect: () => Promise<void>
   poll: () => Promise<void>
   refresh: () => Promise<void>
+  refreshSafely: () => Promise<void>
   seed: () => Promise<void>
   resetIncident: () => Promise<boolean>
   reportCivilian: (civilianId: string, text: string) => Promise<boolean>
@@ -69,11 +70,13 @@ const isConnectionLoss = (err: unknown) => err instanceof EngineError && err.sta
 let connecting: Promise<void> | null = null
 let refreshing: Promise<void> | null = null
 let polling = false
+let seeding: Promise<void> | null = null
 
 export const createEngineSlice: SliceCreator<EngineSlice> = (set, get) => {
   const goOffline = (err: unknown) => {
-    const keepLiveData = get().engineStatus === 'live' && get().snapshot !== null
-    set({ engineStatus: 'offline', engineError: messageOf(err), ...(keepLiveData ? {} : fixtureData(Date.now())) })
+    // Keep whatever data exists (live or recorded); only load the recording when there is nothing.
+    const hasData = get().snapshot !== null
+    set({ engineStatus: 'offline', engineError: messageOf(err), ...(hasData ? {} : fixtureData(Date.now())) })
   }
 
   const runAction = async (action: (client: EngineClient) => Promise<unknown>): Promise<boolean> => {
@@ -97,7 +100,7 @@ export const createEngineSlice: SliceCreator<EngineSlice> = (set, get) => {
   }
 
   return {
-    ...emptyEngineData(),
+    ...fixtureData(Date.now()),
     engineStatus: 'connecting',
     engineError: null,
     pending: false,
@@ -153,7 +156,17 @@ export const createEngineSlice: SliceCreator<EngineSlice> = (set, get) => {
       return refreshing
     },
 
+    refreshSafely: async () => {
+      try {
+        await get().refresh()
+      } catch (err) {
+        if (isConnectionLoss(err)) goOffline(err)
+        else set({ engineError: messageOf(err) })
+      }
+    },
+
     poll: async () => {
+      if (seeding) return
       if (get().engineStatus !== 'live') {
         await get().connect()
         return
@@ -172,20 +185,28 @@ export const createEngineSlice: SliceCreator<EngineSlice> = (set, get) => {
       }
     },
 
-    seed: async () => {
-      const client = getEngineClient()
-      await client.reset()
-      set({ lastSeq: 0, snapshot: null, evacuations: {}, advisories: {} })
-      for (const resident of scenario.residents) await client.report(resident.text)
-      for (const responder of scenario.responders) await client.addResponder(responder.id, responder.name, responder.node)
-      for (const node of scenario.ignite) await client.ignite(node)
-      for (const hazard of scenario.hazards) await client.addHazard(hazard.type as HazardType, hazard.node)
-      const recommendations = await client.prioritize()
-      for (const [i, responder] of scenario.responders.entries()) {
-        const rec = recommendations[i]
-        if (rec) await client.computeRoute(responder.id, rec.civilian_id)
-      }
-      await get().refresh()
+    seed: () => {
+      if (seeding) return seeding
+      seeding = (async () => {
+        try {
+          const client = getEngineClient()
+          await client.reset()
+          set({ lastSeq: 0, snapshot: null, evacuations: {}, advisories: {} })
+          for (const resident of scenario.residents) await client.report(resident.text)
+          for (const responder of scenario.responders) await client.addResponder(responder.id, responder.name, responder.node)
+          for (const node of scenario.ignite) await client.ignite(node)
+          for (const hazard of scenario.hazards) await client.addHazard(hazard.type as HazardType, hazard.node)
+          const recommendations = await client.prioritize()
+          for (const [i, responder] of scenario.responders.entries()) {
+            const rec = recommendations[i]
+            if (rec) await client.computeRoute(responder.id, rec.civilian_id)
+          }
+          await get().refresh()
+        } finally {
+          seeding = null
+        }
+      })()
+      return seeding
     },
 
     resetIncident: async () => {

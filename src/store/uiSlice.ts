@@ -62,7 +62,7 @@ export const createUiSlice: SliceCreator<UiSlice> = (set, get) => ({
   setPerspective: (perspective) => set({ perspective }),
   setViewingAs: (viewingAsId) => {
     set({ viewingAsId })
-    if (get().engineStatus === 'live') void get().refresh()
+    if (get().engineStatus === 'live') void get().refreshSafely()
   },
   selectCivilian: (civilianId) => {
     if (civilianId === null) {

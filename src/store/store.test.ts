@@ -72,6 +72,16 @@ describe('connect', () => {
     expect(state().graph).toBe(ENGINE_FIXTURE.graph)
   })
 
+  it('keeps live data through repeated failures', async () => {
+    await state().connect()
+    const live = state().snapshot
+    engine.down = true
+    await state().poll()
+    await state().poll()
+    expect(state().engineStatus).toBe('offline')
+    expect(state().snapshot).toBe(live)
+  })
+
   it('keeps live data when the engine drops mid-demo', async () => {
     await state().connect()
     const live = state().snapshot
@@ -213,6 +223,13 @@ describe('selection and reset', () => {
     expect(engine.callsTo('reset')).toHaveLength(1)
     expect(thread('CIV_001').messages.length).toBeGreaterThan(0)
     expect(state().perspective).toBe('resident')
+  })
+
+  it('shares one seed between concurrent resets', async () => {
+    await state().connect()
+    await Promise.all([state().resetIncident(), state().resetIncident()])
+    expect(engine.callsTo('reset')).toHaveLength(1)
+    expect(engine.callsTo('report')).toHaveLength(scenario.residents.length)
   })
 
   it('falls back to scenario threads when saved data is corrupt', () => {
